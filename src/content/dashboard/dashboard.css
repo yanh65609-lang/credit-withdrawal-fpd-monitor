@@ -1,0 +1,36 @@
+main.page[data-data-app-content="dashboard"] {
+  --data-app-content-width: 1320px;
+  --chart-1: #42a383;
+  --chart-2: #6ea6c8;
+  --chart-3: #bd7fa3;
+  --chart-4: #d7a441;
+  --chart-5: #8390ad;
+  --chart-6: #75b39f;
+}
+.dashboard-tabs-inner { display: flex; justify-content: center; }
+.dashboard-tabs { justify-content: center; }
+.monitor-hero { padding: 30px 2px 20px; border-bottom: 1px solid color-mix(in srgb, var(--secondary) 16%, transparent); }
+.monitor-hero h1 { margin: 0 0 9px; color: #263a32; font-size: 34px; font-weight: 560; letter-spacing: -.045em; }
+.monitor-hero p { margin: 0; color: #758078; }
+.metric-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 20px 0 24px; }
+.metric-grid--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.metric-grid .metric-card { min-width: 0; border-radius: 14px; box-shadow: 0 4px 16px rgba(35, 58, 48, .045); }
+.metric-grid .metric-card:nth-child(1) { background: #f7f4ee; }
+.metric-grid .metric-card:nth-child(2) { background: #f0f6f2; }
+.metric-grid .metric-card:nth-child(3) { background: #f1f5f8; }
+.metric-grid .metric-card:nth-child(4) { background: #f7f3ed; }
+.chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.chart-grid .dashboard-component, .distribution-section .dashboard-component { border-radius: 16px; box-shadow: 0 4px 18px rgba(35, 58, 48, .04); }
+.distribution-section { margin-top: 30px; padding-bottom: 36px; }
+.distribution-section .section-header { margin-bottom: 10px; }
+.empty-state { margin: 32px 0; color: var(--secondary); }
+.risk-number-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding-top: 6px; }
+.risk-number-grid > div { display: grid; gap: 4px; padding: 14px; border: 1px solid #e5e9e4; border-radius: 12px; background: #fafbf9; }
+.risk-number-grid span { color: #6e7871; font-size: 12px; }
+.risk-number-grid strong { color: #2d4238; font-size: 20px; font-weight: 620; }
+.risk-number-grid em { color: #477a69; font-size: 13px; font-style: normal; font-weight: 600; }
+.risk-number-grid .risk-total { background: #e9f1eb; border-color: #d8e6db; }
+@media (max-width: 1020px) { .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .monitor-hero { padding-top: 20px; } .monitor-hero h1 { font-size: 29px; } .metric-grid, .metric-grid--four, .chart-grid, .risk-number-grid { grid-template-columns: 1fr; } }
+.rate-chart-frame,.chart-frame{min-width:0;width:100%}
+.rate-chart-frame .recharts-line-dot{r:3.2px;stroke:var(--surface);stroke-width:1.2px}
