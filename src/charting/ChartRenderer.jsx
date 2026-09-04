@@ -174,14 +174,13 @@ function WaterfallShape({ x, y, width, height, fill, radius }) {
   return <Rectangle x={x} y={y} width={width} height={height} radius={radius} fill={fill} />;
 }
 
-function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 0, suffix = "" }) {
-  const interval = Math.max(1, Math.ceil(count / 10));
+function SparseValueLabel({ x, y, width = 0, value, index, count }) {
+  const interval = Math.max(1, Math.ceil(count / 8));
   if (index % interval !== 0 && index !== count - 1) return null;
   if (!Number.isFinite(Number(value))) return null;
-  const labelY = Number(y) + (seriesIndex % 2 === 0 ? -10 : 18);
   return (
-    <text x={Number(x) + Number(width) / 2} y={labelY} fill="var(--secondary)" fontSize={11} fontWeight={600} textAnchor="middle">
-      {compact(Number(value))}{suffix}
+    <text x={Number(x) + Number(width) / 2} y={Number(y) - 8} fill="var(--secondary)" fontSize={12} textAnchor="middle">
+      {compact(Number(value))}
     </text>
   );
 }
@@ -1265,22 +1264,12 @@ function StandardChartRenderer({
             dot={getMarkActions && !referenceField(field) ? <ExploreDot first={field === primaryValueField} firstIndex={data.findIndex(row => Number.isFinite(row[field]))} isolated={isolatedPoints.get(field)}
               label={row => `${tick(row[x])}: ${formatTooltipValue(row[field], field)}. Open actions`}
               onSelect={(row, event) => selectMark(field)({ payload: row }, 0, event)} />
-              : { r: 3.2, strokeWidth: 1.2, stroke: "var(--surface)", fill: fieldColor(field) }}
+              : isolatedPoints.get(field)?.size ? <IsolatedLineDot indexes={isolatedPoints.get(field)} /> : false}
             activeDot={{ r: 5, strokeWidth: 3, stroke: "var(--surface)" }}
             isAnimationActive={false}
           >
-            {spec.showValues && (
-              <LabelList
-                dataKey={field}
-                content={(labelProps) => (
-                  <SparseValueLabel
-                    {...labelProps}
-                    count={data.length}
-                    seriesIndex={index}
-                    suffix={String(field).includes("(%)") || String(field).includes(" (%)") || /rate|share/i.test(String(field)) ? "%" : ""}
-                  />
-                )}
-              />
+            {spec.showValues && field === primaryValueField && (
+              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} />} />
             )}
           </Line>
         ))}
