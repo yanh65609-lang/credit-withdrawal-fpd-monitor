@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 
 $projectDir = 'C:\Users\yanhan\Documents\Codex\2026-08-25\cek-penarikan-x20\withdrawal-fpd-dashboard'
 $workspaceDir = 'C:\Users\yanhan\Documents\Codex\2026-08-25\cek-penarikan-x20'
