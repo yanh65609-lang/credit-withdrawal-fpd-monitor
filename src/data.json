@@ -1,7 +1,7 @@
 {
   "surface": "dashboard",
   "title": "授信后提现与FPD监控",
-  "generatedAt": "2026-09-04T01:42:24.811Z",
+  "generatedAt": "2026-09-04T10:40:47.195Z",
   "status": "reviewed",
   "filters": [
     {
@@ -109884,9 +109884,9 @@
         }
       ],
       "source": {
-        "label": "export (4).csv · 授信后提现每日聚合",
+        "label": "withdrawal.csv · 授信后提现每日聚合",
         "files": [
-          "C:/Users/yanhan/Downloads/export (4).csv"
+          "C:/Users/yanhan/Documents/Codex/2026-08-25/cek-penarikan-x20/withdrawal-fpd-dashboard/data/withdrawal.csv"
         ],
         "metricDefinitions": [
           {
@@ -220377,9 +220377,9 @@
         }
       ],
       "source": {
-        "label": "export (5).csv · 客户首笔正式放款订单FPD每日聚合",
+        "label": "fpd.csv · 客户首笔正式放款订单FPD每日聚合",
         "files": [
-          "C:/Users/yanhan/Downloads/export (5).csv"
+          "C:/Users/yanhan/Documents/Codex/2026-08-25/cek-penarikan-x20/withdrawal-fpd-dashboard/data/fpd.csv"
         ],
         "metricDefinitions": [
           {
