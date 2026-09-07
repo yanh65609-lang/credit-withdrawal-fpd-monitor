@@ -62,9 +62,19 @@ try {
     & $gitExe diff --quiet -- data/withdrawal.csv data/fpd.csv src/data.json dist/index.html
     $hasUnpublishedChanges = ($LASTEXITCODE -ne 0)
 
-    if (($newWithdrawalMax -le $oldWithdrawalMax) -and ($newFpdMax -le $oldFpdMax) -and (-not $hasUnpublishedChanges)) {
+    if (($oldWithdrawalMax -and $newWithdrawalMax -lt $oldWithdrawalMax) -or
+        ($oldFpdMax -and $newFpdMax -lt $oldFpdMax)) {
+        throw "业务日期发生倒退，停止发布。提现=$oldWithdrawalMax->$newWithdrawalMax；FPD=$oldFpdMax->$newFpdMax。"
+    }
+
+    $withdrawalChanged = (Get-FileHash -LiteralPath $tempWithdrawal -Algorithm SHA256).Hash -ne
+                         (Get-FileHash -LiteralPath $withdrawalFile -Algorithm SHA256).Hash
+    $fpdChanged = (Get-FileHash -LiteralPath $tempFpd -Algorithm SHA256).Hash -ne
+                  (Get-FileHash -LiteralPath $fpdFile -Algorithm SHA256).Hash
+
+    if ((-not $withdrawalChanged) -and (-not $fpdChanged) -and (-not $hasUnpublishedChanges)) {
         Remove-Item -LiteralPath $tempWithdrawal, $tempFpd -Force
-        Write-Log "数据日期未前进，保留线上版本。提现=$newWithdrawalMax，FPD=$newFpdMax。"
+        Write-Log "底表内容无变化，保留线上版本。提现=$newWithdrawalMax，FPD=$newFpdMax。"
         exit 0
     }
 
