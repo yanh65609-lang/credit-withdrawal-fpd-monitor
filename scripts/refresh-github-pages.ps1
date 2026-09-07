@@ -10,6 +10,7 @@ $finalHtml = Join-Path $workspaceDir '授信后提现与FPD监控_最终版.html
 $logFile = Join-Path $projectDir 'refresh-dashboard.log'
 $withdrawalDs = 'xb904dccda30f4b37bdde470'
 $fpdDs = 'xcdf56cdcf3204513a04e131'
+$gitExe = 'C:\Users\yanhan\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\git\cmd\git.exe'
 
 function Write-Log([string]$message) {
     $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  $message"
@@ -55,7 +56,10 @@ try {
     $newWithdrawalMax = Get-MaxDate $tempWithdrawal 'credit_pass_date'
     $newFpdMax = Get-MaxDate $tempFpd 'loan_date'
 
-    if (($newWithdrawalMax -le $oldWithdrawalMax) -and ($newFpdMax -le $oldFpdMax)) {
+    & $gitExe diff --quiet -- data/withdrawal.csv data/fpd.csv src/data.json dist/index.html
+    $hasUnpublishedChanges = ($LASTEXITCODE -ne 0)
+
+    if (($newWithdrawalMax -le $oldWithdrawalMax) -and ($newFpdMax -le $oldFpdMax) -and (-not $hasUnpublishedChanges)) {
         Remove-Item -LiteralPath $tempWithdrawal, $tempFpd -Force
         Write-Log "数据日期未前进，保留线上版本。提现=$newWithdrawalMax，FPD=$newFpdMax。"
         exit 0
@@ -68,15 +72,19 @@ try {
     npm run build
     Copy-Item -LiteralPath (Join-Path $projectDir 'dist\index.html') -Destination $finalHtml -Force
 
-    git add .gitignore data/withdrawal.csv data/fpd.csv src/data.json dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1
-    if (git diff --cached --quiet) {
+    # The Vite build clears dist; keep the existing Sites-only protected artifacts intact on main.
+    & $gitExe restore --source=HEAD -- 'dist/.openai/hosting.json' 'dist/server/index.js'
+
+    & $gitExe add .gitignore data/withdrawal.csv data/fpd.csv src/data.json dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1
+    & $gitExe diff --cached --quiet
+    if ($LASTEXITCODE -eq 0) {
         Write-Log '文件无变化，无需发布。'
         exit 0
     }
-    git commit -m "Refresh dashboard data through $newWithdrawalMax"
-    git push github main
-    git subtree split --prefix dist --branch gh-pages
-    git push github gh-pages --force
+    & $gitExe commit -m "Refresh dashboard data through $newWithdrawalMax"
+    & $gitExe push github main
+    & $gitExe subtree split --prefix dist --branch gh-pages
+    & $gitExe push github gh-pages --force
 
     Write-Log "更新成功。提现=$withdrawalCount 行/$newWithdrawalMax；FPD=$fpdCount 行/$newFpdMax。"
 }
