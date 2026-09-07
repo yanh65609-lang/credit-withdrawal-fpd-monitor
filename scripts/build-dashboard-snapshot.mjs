@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 const withdrawalInput='C:/Users/yanhan/Documents/Codex/2026-08-25/cek-penarikan-x20/withdrawal-fpd-dashboard/data/withdrawal.csv',fpdInput='C:/Users/yanhan/Documents/Codex/2026-08-25/cek-penarikan-x20/withdrawal-fpd-dashboard/data/fpd.csv';
-const output=new URL('../withdrawal-fpd-snapshot.json',import.meta.url),appOutput=new URL('../withdrawal-fpd-dashboard/src/data.json',import.meta.url);
+const output=new URL('../withdrawal-fpd-snapshot.json',import.meta.url),appOutput=new URL('../src/data.json',import.meta.url);
 function parseLine(line){const cells=[];let value='',quoted=false;for(let i=0;i<line.length;i+=1){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){value+='"';i+=1;}else quoted=!quoted;}else if(c===','&&!quoted){cells.push(value);value='';}else value+=c;}cells.push(value);return cells;}
 function readCsv(file){const [header,...lines]=fs.readFileSync(file,'utf8').trim().split(/\r?\n/),fields=parseLine(header);const numeric=new Set(fields.filter(f=>f.endsWith('_cnt')||f.endsWith('_numerator')||f.endsWith('_denominator')||f.endsWith('_sum')));return lines.filter(Boolean).map(line=>{const values=parseLine(line);return Object.fromEntries(fields.map((field,i)=>[field,numeric.has(field)?Number(values[i]||0):(values[i]??'')]))});}
 const withdrawalRows=readCsv(withdrawalInput).sort((a,b)=>String(a.credit_pass_date).localeCompare(String(b.credit_pass_date)));

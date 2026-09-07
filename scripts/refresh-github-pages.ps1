@@ -42,6 +42,7 @@ try {
     Set-Location -LiteralPath $projectDir
     Write-Log '开始检查观远数据。'
     guancli auth status | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw '观远登录状态检查失败。' }
 
     $oldWithdrawalMax = Get-MaxDate $withdrawalFile 'credit_pass_date'
     $oldFpdMax = Get-MaxDate $fpdFile 'loan_date'
@@ -49,7 +50,9 @@ try {
     $tempFpd = Join-Path $downloadDir ('export5-' + [guid]::NewGuid().ToString('N') + '.csv')
 
     guancli ds preview $withdrawalDs --limit 60000 -f csv | Set-Content -LiteralPath $tempWithdrawal -Encoding utf8
+    if ($LASTEXITCODE -ne 0) { throw '提现数据导出失败。' }
     guancli ds preview $fpdDs --limit 60000 -f csv | Set-Content -LiteralPath $tempFpd -Encoding utf8
+    if ($LASTEXITCODE -ne 0) { throw 'FPD数据导出失败。' }
 
     $withdrawalCount = Assert-Export $tempWithdrawal 'credit_pass_date' @('credit_pass_date','risk_level','product','platform','t0_withdraw_numerator','t7_withdraw_numerator')
     $fpdCount = Assert-Export $tempFpd 'loan_date' @('loan_date','risk_level','product','platform','loan_order_cnt','fpd0_numerator','fpd10_numerator')
@@ -69,11 +72,14 @@ try {
     Move-Item -LiteralPath $tempFpd -Destination $fpdFile -Force
 
     node (Join-Path $projectDir 'scripts\build-dashboard-snapshot.mjs')
+    if ($LASTEXITCODE -ne 0) { throw '看板数据生成失败。' }
     npm run build
+    if ($LASTEXITCODE -ne 0) { throw '看板构建失败。' }
     Copy-Item -LiteralPath (Join-Path $projectDir 'dist\index.html') -Destination $finalHtml -Force
 
     # The Vite build clears dist; keep the existing Sites-only protected artifacts intact on main.
     & $gitExe restore --source=HEAD -- 'dist/.openai/hosting.json' 'dist/server/index.js'
+    if ($LASTEXITCODE -ne 0) { throw '构建后文件恢复失败。' }
 
     & $gitExe add .gitignore data/withdrawal.csv data/fpd.csv src/data.json dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1
     & $gitExe diff --cached --quiet
@@ -82,9 +88,13 @@ try {
         exit 0
     }
     & $gitExe commit -m "Refresh dashboard data through $newWithdrawalMax"
+    if ($LASTEXITCODE -ne 0) { throw 'Git提交失败。' }
     & $gitExe push github main
+    if ($LASTEXITCODE -ne 0) { throw 'GitHub主分支推送失败。' }
     & $gitExe subtree split --prefix dist --branch gh-pages
+    if ($LASTEXITCODE -ne 0) { throw 'GitHub Pages分支生成失败。' }
     & $gitExe push github gh-pages --force
+    if ($LASTEXITCODE -ne 0) { throw 'GitHub Pages推送失败。' }
 
     Write-Log "更新成功。提现=$withdrawalCount 行/$newWithdrawalMax；FPD=$fpdCount 行/$newFpdMax。"
 }
