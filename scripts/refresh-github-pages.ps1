@@ -69,7 +69,7 @@ try {
     $newWithdrawalMax = Get-MaxDate $tempWithdrawal 'credit_pass_date'
     $newFpdMax = Get-MaxDate $tempFpd 'loan_date'
 
-    & $gitExe diff --quiet -- data/withdrawal.csv data/fpd.csv src/data.json dist/index.html
+    & $gitExe diff --quiet -- data/withdrawal.csv data/fpd.csv src/data.json src/content/dashboard/DashboardContent.jsx src/content/dashboard/dashboard.css dist/index.html
     $hasUnpublishedChanges = ($LASTEXITCODE -ne 0)
 
     if (($oldWithdrawalMax -and $newWithdrawalMax -lt $oldWithdrawalMax) -or
