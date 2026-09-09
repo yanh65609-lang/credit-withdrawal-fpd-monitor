@@ -20,6 +20,9 @@ const snapshot={surface:'dashboard',title:'授信后提现与FPD监控',generate
     {label:'T0额度使用率',definition:'T0第一笔提现申请金额 / 对应授信额度。'},
     {label:'授信通过客户人均授信额度',definition:'授信通过额度合计 / 授信通过客户数。'},
     {label:'T0提现申请客户人均授信额度',definition:'T0提现申请客户对应授信额度合计 / T0提现申请客户数。'},
+    {label:'各授信额度分桶T0提现申请率',definition:'各授信额度档位T0提现申请客户数 / 对应授信通过客户数。'},
+    {label:'授信通过客户额度分桶结构',definition:'各授信额度档位授信通过客户数 / 全部授信通过客户数，每期合计100%。'},
+    {label:'各风险等级人均授信额度',definition:'各风险等级授信通过额度合计 / 对应授信通过客户数。'},
     {label:'T0额度使用率分桶占比',definition:'T0提现申请客户按申请金额除以授信额度划分为100%以下、100%及以上，汇总占比合计100%。'}]}},
   loan_fpd_monitor:{rows:fpdRows,source:{label:'fpd.csv · 客户首笔正式放款订单FPD每日聚合',files:[fpdInput],metricDefinitions:[
     {label:'FPD0和FPD10订单逾期率',definition:'逾期订单数除以已到相应观察期的全部正式放款订单数。'},

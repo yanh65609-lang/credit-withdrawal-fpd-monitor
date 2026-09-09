@@ -64,7 +64,7 @@ try {
     & $env:ComSpec /d /s /c $fpdCommand
     if ($LASTEXITCODE -ne 0) { throw 'FPD数据导出失败。' }
 
-    $withdrawalCount = Assert-Export $tempWithdrawal 'credit_pass_date' @('credit_pass_date','risk_level','product','platform','credit_pass_customer_cnt','credit_pass_limit_amt_sum','t0_withdraw_numerator','t7_withdraw_numerator','t0_withdraw_utilization_denominator')
+    $withdrawalCount = Assert-Export $tempWithdrawal 'credit_pass_date' @('credit_pass_date','risk_level','product','platform','credit_limit_bucket','credit_pass_customer_cnt','credit_pass_limit_amt_sum','t0_withdraw_numerator','t7_withdraw_numerator','t0_withdraw_utilization_denominator')
     $fpdCount = Assert-Export $tempFpd 'loan_date' @('loan_date','risk_level','product','platform','loan_order_cnt','fpd0_numerator','fpd10_numerator')
     $newWithdrawalMax = Get-MaxDate $tempWithdrawal 'credit_pass_date'
     $newFpdMax = Get-MaxDate $tempFpd 'loan_date'
