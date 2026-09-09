@@ -1,7 +1,8 @@
 {
+  "id": "credit-withdrawal-fpd-monitor-clear-defaults-v1",
   "surface": "dashboard",
   "title": "授信后提现与FPD监控",
-  "generatedAt": "2026-09-09T10:29:02.476Z",
+  "generatedAt": "2026-09-09T10:57:24.029Z",
   "status": "reviewed",
   "filters": [
     {
