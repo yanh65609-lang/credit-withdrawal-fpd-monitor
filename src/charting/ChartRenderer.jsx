@@ -174,12 +174,13 @@ function WaterfallShape({ x, y, width, height, fill, radius }) {
   return <Rectangle x={x} y={y} width={width} height={height} radius={radius} fill={fill} />;
 }
 
-function SparseValueLabel({ x, y, width = 0, value, index, count }) {
-  const interval = Math.max(1, Math.ceil(count / 8));
+function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 0 }) {
+  const interval = Math.max(1, Math.ceil(count / 12));
   if (index % interval !== 0 && index !== count - 1) return null;
   if (!Number.isFinite(Number(value))) return null;
+  const offset = [8, -16, 22][seriesIndex] ?? 8;
   return (
-    <text x={Number(x) + Number(width) / 2} y={Number(y) - 8} fill="var(--secondary)" fontSize={12} textAnchor="middle">
+    <text x={Number(x) + Number(width) / 2} y={Number(y) - offset} fill="var(--secondary)" fontSize={12} textAnchor="middle">
       {compact(Number(value))}
     </text>
   );
@@ -1268,8 +1269,8 @@ function StandardChartRenderer({
             activeDot={{ r: 5, strokeWidth: 3, stroke: "var(--surface)" }}
             isAnimationActive={false}
           >
-            {spec.showValues && field === primaryValueField && (
-              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} />} />
+            {spec.showValues && (lineFields.length <= 3 || field === primaryValueField) && (
+              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} seriesIndex={index} />} />
             )}
           </Line>
         ))}

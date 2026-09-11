@@ -3,9 +3,11 @@ const withdrawalInput='C:/Users/yanhan/Documents/Codex/2026-08-25/cek-penarikan-
 const output=new URL('../withdrawal-fpd-snapshot.json',import.meta.url),appOutput=new URL('../src/data.json',import.meta.url);
 function parseLine(line){const cells=[];let value='',quoted=false;for(let i=0;i<line.length;i+=1){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){value+='"';i+=1;}else quoted=!quoted;}else if(c===','&&!quoted){cells.push(value);value='';}else value+=c;}cells.push(value);return cells;}
 function readCsv(file){const [header,...lines]=fs.readFileSync(file,'utf8').trim().split(/\r?\n/),fields=parseLine(header);const numeric=new Set(fields.filter(f=>f.endsWith('_cnt')||f.endsWith('_numerator')||f.endsWith('_denominator')||f.endsWith('_sum')));return lines.filter(Boolean).map(line=>{const values=parseLine(line);return Object.fromEntries(fields.map((field,i)=>[field,numeric.has(field)?Number(values[i]||0):(values[i]??'')]))});}
-const withdrawalRows=readCsv(withdrawalInput).sort((a,b)=>String(a.credit_pass_date).localeCompare(String(b.credit_pass_date)));
+function productGroup(code){if(['CL_01','CL_06'].includes(code))return'等本';if(code==='CL_07')return'小等本';if(['CL_03','CL_04','CL_05'].includes(code))return'灵活产品';if(code==='CL_08')return'营销产品';return'其他产品';}
+const withdrawalRows=readCsv(withdrawalInput).map(row=>({...row,product:productGroup(row.product)})).sort((a,b)=>String(a.credit_pass_date).localeCompare(String(b.credit_pass_date)));
 const fpdRows=readCsv(fpdInput).map(row=>({...row,
   loan_type:row.loan_type==='01_首笔放款'?'首借':row.loan_type==='02_非首笔放款'?'复借':row.loan_type,
+  product:productGroup(row.product),
   credit_pass_date:row.loan_date
 })).sort((a,b)=>String(a.loan_date).localeCompare(String(b.loan_date)));
 const dates=[...withdrawalRows.map(r=>r.credit_pass_date),...fpdRows.map(r=>r.loan_date)].sort();

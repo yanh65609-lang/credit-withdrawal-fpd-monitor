@@ -20,6 +20,12 @@ main.page[data-data-app-content="dashboard"] {
 .metric-grid .metric-card:nth-child(3) { background: #f1f5f8; }
 .metric-grid .metric-card:nth-child(4) { background: #f7f3ed; }
 .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.trend-section { display: grid; gap: 10px; margin-top: 18px; }
+.trend-dimension-selector { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.trend-dimension-selector button { appearance: none; border: 1px solid #d9dfda; border-radius: 999px; background: #fff; color: #536059; padding: 6px 14px; font: inherit; font-size: 13px; line-height: 1; cursor: pointer; transition: background .16s ease,border-color .16s ease,color .16s ease; }
+.trend-dimension-selector button:hover { border-color: #8fb4a6; color: #2f5f50; }
+.trend-dimension-selector button.is-active { border-color: #3f8f75; background: #3f8f75; color: #fff; font-weight: 600; }
+.fpd-primary-trend { display: grid; gap: 10px; min-width: 0; }
 .chart-grid .dashboard-component, .distribution-section .dashboard-component { border-radius: 16px; box-shadow: 0 4px 18px rgba(35, 58, 48, .04); }
 .distribution-section { margin-top: 30px; padding-bottom: 36px; }
 .distribution-section .section-header { margin-bottom: 10px; }
