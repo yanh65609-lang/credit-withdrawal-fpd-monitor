@@ -29,6 +29,7 @@ const snapshot={id:'credit-withdrawal-fpd-monitor-clear-defaults-v1',surface:'da
     {label:'T0额度使用率',definition:'T0第一笔提现申请金额 / 对应授信额度。'},
     {label:'授信通过客户人均授信额度',definition:'授信通过额度合计 / 授信通过客户数。'},
     {label:'T0提现申请客户人均授信额度',definition:'T0提现申请客户对应授信额度合计 / T0提现申请客户数。'},
+    {label:'T0客户人均放款金额',definition:'仅统计ods.ods_t_payment_order_mif中is_delete=N的正式放款订单；实际放款金额合计 / 实际放款客户数。'},
     {label:'各授信额度分桶T0提现申请率',definition:'各授信额度档位T0提现申请客户数 / 对应授信通过客户数。'},
     {label:'授信通过客户额度分桶结构',definition:'各授信额度档位授信通过客户数 / 全部授信通过客户数，每期合计100%。'},
     {label:'各风险等级人均授信额度',definition:'各风险等级授信通过额度合计 / 对应授信通过客户数。'},
