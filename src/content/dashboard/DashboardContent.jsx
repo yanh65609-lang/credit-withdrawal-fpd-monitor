@@ -29,9 +29,13 @@ function EvidenceChart({spec,rows,...props}){
   const frameRef=useRef(null);
   useEffect(()=>{
     if(!isRateChart||!frameRef.current)return;
-    const fix=()=>{frameRef.current.querySelectorAll(".recharts-label-list text").forEach(node=>{
+    const fix=()=>{frameRef.current.querySelectorAll("text,span,div").forEach(node=>{
+      if(node.tagName.toLowerCase()!=="text"&&node.children.length)return;
+      const value=node.textContent?.trim(),match=value?.match(/^(-?\d+(?:\.\d+)?)%$/);
+      if(match){const formatted=`${Number(match[1]).toFixed(1)}%`;if(value!==formatted)node.textContent=formatted}
+    });frameRef.current.querySelectorAll(".recharts-label-list text").forEach(node=>{
       const value=node.textContent?.trim();
-      if(value&&/^-?\d+(?:\.\d+)?$/.test(value))node.textContent=`${value}%`;
+      if(value&&/^-?\d+(?:\.\d+)?$/.test(value))node.textContent=`${Number(value).toFixed(1)}%`;
       const y=Number(node.getAttribute("y"));
       if(Number.isFinite(y)&&y<24)node.setAttribute("y","24");
       const svg=node.closest("svg"),x=Number(node.getAttribute("x")),width=svg?.viewBox?.baseVal?.width||svg?.clientWidth||0;
