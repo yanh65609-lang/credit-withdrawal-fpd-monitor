@@ -64,8 +64,8 @@ try {
     & $env:ComSpec /d /s /c $fpdCommand
     if ($LASTEXITCODE -ne 0) { throw 'FPD数据导出失败。' }
 
-    $withdrawalCount = Assert-Export $tempWithdrawal 'credit_pass_date' @('credit_pass_date','risk_level','product','platform','credit_limit_bucket','credit_pass_customer_cnt','credit_pass_limit_amt_sum','t0_withdraw_numerator','t7_withdraw_numerator','t0_withdraw_utilization_denominator','t0_loan_amt_sum','t0_loan_customer_cnt')
-    $fpdCount = Assert-Export $tempFpd 'loan_date' @('loan_date','risk_level','product','platform','loan_order_cnt','fpd0_numerator','fpd10_numerator')
+    $withdrawalCount = Assert-Export $tempWithdrawal 'credit_pass_date' @('credit_pass_date','risk_level','product','app_version','platform','credit_limit_bucket','credit_pass_customer_cnt','credit_pass_limit_amt_sum','t0_withdraw_numerator','t7_withdraw_numerator','t0_withdraw_utilization_denominator','t0_loan_amt_sum','t0_loan_customer_cnt')
+    $fpdCount = Assert-Export $tempFpd 'loan_date' @('loan_date','risk_level','product','app_version','platform','loan_order_cnt','fpd0_numerator','fpd10_numerator')
     $newWithdrawalMax = Get-MaxDate $tempWithdrawal 'credit_pass_date'
     $newFpdMax = Get-MaxDate $tempFpd 'loan_date'
 
@@ -101,7 +101,7 @@ try {
     & $gitExe restore --source=HEAD -- 'dist/.openai/hosting.json' 'dist/server/index.js'
     if ($LASTEXITCODE -ne 0) { throw '构建后文件恢复失败。' }
 
-    & $gitExe add .gitignore data/withdrawal.csv data/fpd.csv src/data.json src/content/dashboard/DashboardContent.jsx src/content/dashboard/dashboard.css dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1
+    & $gitExe add .gitignore data/withdrawal.csv data/fpd.csv src/data.json src/content/dashboard/DashboardContent.jsx src/content/dashboard/dashboard.css dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1 sql/withdrawal-monitor-with-app-version.sql sql/fpd-monitor-with-app-version.sql
     & $gitExe diff --cached --quiet
     if ($LASTEXITCODE -eq 0) {
         Write-Log '文件无变化，无需发布。'
