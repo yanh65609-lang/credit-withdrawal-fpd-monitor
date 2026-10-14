@@ -20,8 +20,8 @@ const filterRows=Array.from({length:Math.max(originalProducts.length,products.le
 const snapshot={id:'credit-withdrawal-fpd-monitor-clear-defaults-v1',surface:'dashboard',title:'授信后提现与FPD监控',generatedAt:new Date().toISOString(),status:'reviewed',buildStatus:'complete',filters:[
   {id:'credit_pass_date',label:'日期范围',field:'credit_pass_date',mode:'through',defaultValue:`${dates[0]}..${dates.at(-1)}`},
   {id:'original_product',label:'原始产品',field:'original_product',multiple:true,defaultValue:[]},
-  {id:'product',label:'产品',field:'product',multiple:true,defaultValue:[]},{id:'app_version',label:'App版本',field:'app_version',multiple:true,defaultValue:[]},{id:'risk_level',label:'风险等级',field:'risk_level',multiple:true,defaultValue:[]},
-  {id:'credit_type',label:'授信类型',field:'credit_type',multiple:true,defaultValue:[]},{id:'platform',label:'手机系统',field:'platform',multiple:true,defaultValue:[]},
+  {id:'product',label:'产品',field:'product',multiple:true,defaultValue:[]},{id:'risk_level',label:'风险等级',field:'risk_level',multiple:true,defaultValue:[]},
+  {id:'credit_type',label:'授信类型',field:'credit_type',multiple:true,defaultValue:[]},{id:'platform',label:'手机系统',field:'platform',multiple:true,defaultValue:[]},{id:'app_version',label:'App版本',field:'app_version',multiple:true,defaultValue:[]},
   {id:'media',label:'媒体渠道',field:'media',multiple:true,defaultValue:[]},
   {id:'loan_type',label:'首复借',field:'loan_type',multiple:true,defaultValue:[],queryIds:['loan_fpd_monitor']}],queries:{
   filter_options:{rows:filterRows,source:{label:'筛选项升序辅助维度',metricDefinitions:[]}},

@@ -2,7 +2,7 @@
   "id": "credit-withdrawal-fpd-monitor-clear-defaults-v1",
   "surface": "dashboard",
   "title": "授信后提现与FPD监控",
-  "generatedAt": "2026-10-14T05:54:22.701Z",
+  "generatedAt": "2026-10-14T06:43:08.039Z",
   "status": "reviewed",
   "buildStatus": "complete",
   "filters": [
@@ -28,13 +28,6 @@
       "defaultValue": []
     },
     {
-      "id": "app_version",
-      "label": "App版本",
-      "field": "app_version",
-      "multiple": true,
-      "defaultValue": []
-    },
-    {
       "id": "risk_level",
       "label": "风险等级",
       "field": "risk_level",
@@ -52,6 +45,13 @@
       "id": "platform",
       "label": "手机系统",
       "field": "platform",
+      "multiple": true,
+      "defaultValue": []
+    },
+    {
+      "id": "app_version",
+      "label": "App版本",
+      "field": "app_version",
       "multiple": true,
       "defaultValue": []
     },
