@@ -28,7 +28,6 @@ WITH params AS (
     FROM credit_base cb
     LEFT JOIN ods.ods_t_user_request_common_info_df rc
       ON rc.user_id=cb.user_id
-     AND rc.deleted_flag='0'
      AND NULLIF(TRIM(rc.app_version),'') IS NOT NULL
      AND rc.created_time<=cb.credit_pass_time
 ), credit_bounded AS (

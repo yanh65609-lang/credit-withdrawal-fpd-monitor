@@ -36,7 +36,6 @@ WITH params AS (
     FROM fpd_credit_base fb
     LEFT JOIN ods.ods_t_user_request_common_info_df rc
       ON rc.user_id::TEXT=fb.user_id::TEXT
-     AND rc.deleted_flag='0'
      AND NULLIF(TRIM(rc.app_version),'') IS NOT NULL
      AND rc.created_time<=fb.credit_pass_time
 ), fpd_base AS (
