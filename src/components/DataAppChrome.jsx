@@ -604,13 +604,6 @@ export function DataAppTopbar({
             published={published}
             surface={surface}
           />
-          {canEdit && <span className="history-tooltip-trigger" data-delayed-tooltip>
-            <button type="button" className="dashboard-header-action-button dashboard-header-edit-button"
-              aria-describedby={editTooltipId} aria-label="编辑文字和布局" disabled={saveStatus === "saving"} onClick={() => onModeChange?.("edit")}>
-              <Icon name="edit" size={18} />
-            </button>
-            <Tooltip id={editTooltipId} className="topbar-mode-tooltip">编辑文字和布局</Tooltip>
-          </span>}
 
 
         </div>}
