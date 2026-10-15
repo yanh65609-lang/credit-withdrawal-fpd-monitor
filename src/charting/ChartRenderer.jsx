@@ -174,14 +174,51 @@ function WaterfallShape({ x, y, width, height, fill, radius }) {
   return <Rectangle x={x} y={y} width={width} height={height} radius={radius} fill={fill} />;
 }
 
-function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 0 }) {
+const pendingLabelLayouts = new WeakMap();
+function layoutValueLabels(svg) {
+  const bounds = svg.viewBox.baseVal;
+  const right = bounds.width || svg.clientWidth;
+  const bottom = bounds.height || svg.clientHeight;
+  const occupied = [];
+  const curves = [...svg.querySelectorAll('.recharts-line-curve')].flatMap(path => {
+    const length = path.getTotalLength();
+    return Array.from({ length: Math.ceil(length / 5) + 1 }, (_, i) => path.getPointAtLength(Math.min(length, i * 5)));
+  });
+  const labels = [...svg.querySelectorAll('text[data-value-label]')].sort((a,b) => Number(b.dataset.recent) - Number(a.dataset.recent) || Number(b.dataset.index) - Number(a.dataset.index));
+  for (const label of labels) {
+    label.style.visibility = 'visible';
+    const ax = Number(label.dataset.ax), ay = Number(label.dataset.ay);
+    const width = label.getComputedTextLength();
+    const x = Math.max(width / 2 + 8, Math.min(right - width / 2 - 8, ax));
+    const offsets = Array.from({length:Number(label.dataset.recent) ? 10 : 3}, (_,i) => Number(label.dataset.series) % 2 ? [24+i*18,-18-i*18] : [-18-i*18,24+i*18]).flat();
+    let placed = false;
+    for (const offset of offsets) {
+      const y = Math.max(18, Math.min(bottom - 38, ay + offset));
+      const box = { left:x-width/2-4, right:x+width/2+4, top:y-13, bottom:y+4 };
+      if (occupied.some(b => box.left < b.right && box.right > b.left && box.top < b.bottom && box.bottom > b.top)) continue;
+      if (curves.some(p => p.x > box.left && p.x < box.right && p.y > box.top && p.y < box.bottom)) continue;
+      label.setAttribute('x', x); label.setAttribute('y', y);
+      occupied.push(box); placed = true; break;
+    }
+    if (!placed) label.style.visibility = 'hidden';
+  }
+}
+function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 0, values = [], formatValue = compact }) {
+  const labelRef = useRef(null);
+  useEffect(() => {
+    const svg = labelRef.current?.closest('svg');
+    if (!svg) return;
+    if (pendingLabelLayouts.has(svg)) cancelAnimationFrame(pendingLabelLayouts.get(svg));
+    pendingLabelLayouts.set(svg, requestAnimationFrame(() => { pendingLabelLayouts.delete(svg); layoutValueLabels(svg); }));
+  });
+  const validIndexes = values.flatMap((v,i) => v != null && v !== '' && Number.isFinite(Number(v)) ? [i] : []);
+  const recent = validIndexes.slice(-3).includes(index);
   const interval = Math.max(1, Math.ceil(count / 12));
-  if (index % interval !== 0 && index !== count - 1) return null;
-  if (!Number.isFinite(Number(value))) return null;
-  const offset = [8, -16, 22][seriesIndex] ?? 8;
+  if (!recent && index % interval !== 0) return null;
+  if (value == null || value === '' || x == null || y == null || ![value,x,y].every(v => Number.isFinite(Number(v)))) return null;
   return (
-    <text x={Number(x) + Number(width) / 2} y={Number(y) - offset} fill="var(--secondary)" fontSize={12} textAnchor="middle">
-      {compact(Number(value))}
+    <text ref={labelRef} data-value-label="true" data-recent={recent ? 1 : 0} data-index={index} data-series={seriesIndex} data-ax={Number(x)+Number(width)/2} data-ay={Number(y)} x={Number(x) + Number(width) / 2} y={Number(y) - 18} fill="var(--secondary)" fontSize={12} textAnchor="middle" paintOrder="stroke" stroke="var(--surface)" strokeWidth={3} strokeLinejoin="round">
+      {formatValue(Number(value))}
     </text>
   );
 }
@@ -1270,7 +1307,7 @@ function StandardChartRenderer({
             isAnimationActive={false}
           >
             {spec.showValues && (lineFields.length <= 3 || field === primaryValueField) && (
-              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} seriesIndex={index} />} />
+              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} seriesIndex={index} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} />} />
             )}
           </Line>
         ))}
@@ -1305,7 +1342,7 @@ function StandardChartRenderer({
             onClick={selectMark(field, data)}
           >
             {spec.showValues && field === primaryValueField && (
-              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} />} />
+              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} />} />
             )}
           </Area>
         ))}

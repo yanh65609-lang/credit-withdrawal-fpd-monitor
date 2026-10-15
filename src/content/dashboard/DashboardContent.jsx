@@ -36,13 +36,6 @@ function EvidenceChart({spec,rows,...props}){
     });frameRef.current.querySelectorAll(".recharts-label-list text").forEach(node=>{
       const value=node.textContent?.trim();
       if(value&&/^-?\d+(?:\.\d+)?$/.test(value))node.textContent=`${Number(value).toFixed(1)}%`;
-      const y=Number(node.getAttribute("y"));
-      if(Number.isFinite(y)&&y<24)node.setAttribute("y","24");
-      const svg=node.closest("svg"),x=Number(node.getAttribute("x")),width=svg?.viewBox?.baseVal?.width||svg?.clientWidth||0;
-      if(Number.isFinite(x)&&width){
-        if(x<42)node.setAttribute("text-anchor","start");
-        else if(x>width-42)node.setAttribute("text-anchor","end");
-      }
     });};
     fix();
     const observer=new MutationObserver(fix);
