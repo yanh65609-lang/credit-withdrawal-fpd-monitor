@@ -25,7 +25,7 @@ function EvidenceChart({spec,rows,...props}){
   const seriesCount=spec?.series?new Set(mappedRows.map(row=>row[spec.series])).size:(spec?.fields?.length??1);
   const showValues=spec?.showValues??(spec?.type==="line"&&seriesCount<=8);
   const isRateChart=rateFields.some(field=>displayField(field).endsWith(" (%)"));
-  const mappedSpec={...spec,y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,...(legendLabels?{legend:{...spec.legend,labels:legendLabels}}:{})};
+  const mappedSpec={...spec,colors:{...spec?.colors,"1.2.9":"#d32f2f"},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,...(legendLabels?{legend:{...spec.legend,labels:legendLabels}}:{})};
   const frameRef=useRef(null);
   useEffect(()=>{
     if(!isRateChart||!frameRef.current)return;
