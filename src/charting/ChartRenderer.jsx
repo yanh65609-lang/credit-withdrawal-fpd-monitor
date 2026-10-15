@@ -187,6 +187,8 @@ function layoutValueLabels(svg) {
   const labels = [...svg.querySelectorAll('text[data-value-label]')].sort((a,b) => Number(b.dataset.recent) - Number(a.dataset.recent) || Number(b.dataset.index) - Number(a.dataset.index));
   for (const label of labels) {
     label.style.visibility = 'visible';
+    const leader = label.previousElementSibling;
+    if (leader?.tagName === 'line') leader.style.visibility = 'hidden';
     const ax = Number(label.dataset.ax), ay = Number(label.dataset.ay);
     const width = label.getComputedTextLength();
     const x = Math.max(width / 2 + 8, Math.min(right - width / 2 - 8, ax));
@@ -198,6 +200,11 @@ function layoutValueLabels(svg) {
       if (occupied.some(b => box.left < b.right && box.right > b.left && box.top < b.bottom && box.bottom > b.top)) continue;
       if (curves.some(p => p.x > box.left && p.x < box.right && p.y > box.top && p.y < box.bottom)) continue;
       label.setAttribute('x', x); label.setAttribute('y', y);
+      if (leader?.tagName === 'line' && Math.abs(y-ay) > 30) {
+        leader.setAttribute('x1',ax); leader.setAttribute('y1',ay);
+        leader.setAttribute('x2',x); leader.setAttribute('y2',y > ay ? y-15 : y+5);
+        leader.style.visibility = 'visible';
+      }
       occupied.push(box); placed = true; break;
     }
     if (!placed) label.style.visibility = 'hidden';
@@ -217,9 +224,12 @@ function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 
   if (!recent && index % interval !== 0) return null;
   if (value == null || value === '' || x == null || y == null || ![value,x,y].every(v => Number.isFinite(Number(v)))) return null;
   return (
+    <g>
+    <line stroke="var(--secondary)" strokeWidth={0.8} strokeDasharray="2 3" opacity={0.5} style={{visibility:'hidden'}} />
     <text ref={labelRef} data-value-label="true" data-recent={recent ? 1 : 0} data-index={index} data-series={seriesIndex} data-ax={Number(x)+Number(width)/2} data-ay={Number(y)} x={Number(x) + Number(width) / 2} y={Number(y) - 18} fill="var(--secondary)" fontSize={12} textAnchor="middle" paintOrder="stroke" stroke="var(--surface)" strokeWidth={3} strokeLinejoin="round">
       {formatValue(Number(value))}
     </text>
+    </g>
   );
 }
 
