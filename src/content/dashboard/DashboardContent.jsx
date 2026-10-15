@@ -19,15 +19,19 @@ function Filters(props){
   const productQueries=useMemo(()=>{
     const [start,end]=String(range??"all").split("..");
     const source=queries[fpd?"loan_fpd_monitor":"withdrawal_monitor"]?.rows??[];
-    const products=new Set();
+    const options=Object.fromEntries(["original_product","risk_level","app_version"].map(field=>[field,new Set()]));
     for(const row of source){
       const date=fpd?row.loan_date:row.credit_pass_date;
       const inRange=start==="all"||!range||(end?date>=start&&date<=end:date<=start);
-      if(inRange&&Number(fpd?row.loan_order_cnt:row.credit_pass_customer_cnt)>0&&row.original_product)products.add(row.original_product);
+      if(inRange&&Number(fpd?row.loan_order_cnt:row.credit_pass_customer_cnt)>0){
+        for(const field of Object.keys(options))if(row[field])options[field].add(row[field]);
+      }
     }
-    return {...queries,date_product_options:{rows:[...products].sort().map(original_product=>({original_product}))}};
+    return {...queries,...Object.fromEntries(Object.entries(options).map(([field,entries])=>[
+      `date_options_${field}`,{rows:[...entries].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).map(value=>({[field]:value}))}
+    ]))};
   },[queries,range,fpd]);
-  const scopedFilters=useMemo(()=>filters.map(filter=>filter.id==="original_product"?{...filter,queryIds:["date_product_options"]}:filter),[filters]);
+  const scopedFilters=useMemo(()=>filters.map(filter=>["original_product","risk_level","app_version"].includes(filter.id)?{...filter,queryIds:[`date_options_${filter.id}`]}:filter),[filters]);
   return <BaseFilters {...props} queries={productQueries} filters={scopedFilters}/>;
 }
 function EvidenceChart({spec,rows,...props}){
