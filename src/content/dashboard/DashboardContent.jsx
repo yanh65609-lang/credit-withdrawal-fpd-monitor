@@ -1,5 +1,5 @@
-import React,{useEffect,useRef,useState} from "react";
-import {EvidenceChart as BaseEvidenceChart,Filters,MetricCard,SegmentedControl,SectionHeader,useDataApp,useDashboardTabs} from "../../data-app-public.jsx";
+import React,{useEffect,useMemo,useRef,useState} from "react";
+import {EvidenceChart as BaseEvidenceChart,Filters as BaseFilters,MetricCard,SegmentedControl,SectionHeader,useDataApp,useDashboardTabs} from "../../data-app-public.jsx";
 import "./dashboard.css";
 const tabs=[{id:"withdrawal",label:"01_T0/T7提现率"},{id:"fpd",label:"02_提现订单及FPD"}],baseFilterIds=["credit_pass_date","original_product","product","app_version","credit_type","risk_level","platform","media"];
 const riskOrder=["RG0","RG1","RG2","RG3","RG4","RG5","RG6","RG7"],creditLimitOrder=["200万及以上","180万","150万","120万","100万","80万","60万","50万","40万","30万"];
@@ -12,6 +12,24 @@ function ws(a){const hasCreditLimit=a.some(r=>Object.hasOwn(r,"credit_pass_limit
 function fs(a){const names=["loan_order_cnt","loan_customer_cnt","loan_amt_sum","credit_limit_sum","fpd0_numerator","fpd0_denominator","fpd0_amt_numerator","fpd0_amt_denominator","fpd10_numerator","fpd10_denominator","fpd10_amt_numerator","fpd10_amt_denominator"],x=Object.fromEntries(names.map(f=>[f,sum(a,f)]));return{...x,fpd0Rate:ratio(x.fpd0_numerator,x.fpd0_denominator),fpd10Rate:ratio(x.fpd10_numerator,x.fpd10_denominator),fpd0AmountRate:ratio(x.fpd0_amt_numerator,x.fpd0_amt_denominator),fpd10AmountRate:ratio(x.fpd10_amt_numerator,x.fpd10_amt_denominator),util:ratio(x.loan_amt_sum,x.credit_limit_sum)}}
 const periods=(r,g,s)=>groups(r,g).map(([p,a])=>({period:p,label:cd(p),...s(a)}));
 const rateAliases={t0:"t0Rate",t7:"t7Rate",util:"utilizationRate",rate:"segmentRate",fa0:"fpd0AmountRate",fa3:"fpd3AmountRate",share:"segmentShare"};
+function Filters(props){
+  const {queries,values,filters}=props;
+  const fpd=filters.some(filter=>filter.id==="loan_type");
+  const range=values.credit_pass_date??filters.find(filter=>filter.id==="credit_pass_date")?.defaultValue;
+  const productQueries=useMemo(()=>{
+    const [start,end]=String(range??"all").split("..");
+    const source=queries[fpd?"loan_fpd_monitor":"withdrawal_monitor"]?.rows??[];
+    const products=new Set();
+    for(const row of source){
+      const date=fpd?row.loan_date:row.credit_pass_date;
+      const inRange=start==="all"||!range||(end?date>=start&&date<=end:date<=start);
+      if(inRange&&Number(fpd?row.loan_order_cnt:row.credit_pass_customer_cnt)>0&&row.original_product)products.add(row.original_product);
+    }
+    return {...queries,date_product_options:{rows:[...products].sort().map(original_product=>({original_product}))}};
+  },[queries,range,fpd]);
+  const scopedFilters=useMemo(()=>filters.map(filter=>filter.id==="original_product"?{...filter,queryIds:["date_product_options"]}:filter),[filters]);
+  return <BaseFilters {...props} queries={productQueries} filters={scopedFilters}/>;
+}
 function EvidenceChart({spec,rows,...props}){
   const alias=field=>rateAliases[field]??field;
   const displayField=field=>/(?:Rate|Share)$/.test(alias(field))?`${alias(field)} (%)`:alias(field);
