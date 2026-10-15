@@ -1,6 +1,7 @@
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
+import reviewedSnapshot from "../data.json";
 import { dataAppChromeColors } from "../chrome-contrast.js";
 import { dataAppChromeLayout } from "../chrome-layout.js";
 import { dataAppScheduleDays, normalizeDataAppRefreshSchedule } from "../data-app-schedule.js";
@@ -23,30 +24,30 @@ import { Dialog, Menu, MenuGroup, MenuItem, MenuSeparator, Select, Tooltip } fro
 
 const convertOptionGroups = [
   [
-    { action: "pdf", label: "PDF", iconSrc: convertPdfIcon },
-    { action: "word", label: "Word document", iconSrc: convertWordIcon },
+    { action: "pdf", label: "PDF 文档", iconSrc: convertPdfIcon },
+    { action: "word", label: "Word 文档", iconSrc: convertWordIcon },
     {
       action: "powerpoint",
-      label: "PowerPoint",
+      label: "PowerPoint 演示文稿",
       iconSrc: convertPowerpointIcon,
     },
   ],
   [
     {
       action: "google-docs",
-      label: "Google Docs",
+      label: "Google 文档",
       iconSrc: convertGoogleDocsIcon,
     },
     {
       action: "google-slides",
-      label: "Google Slides",
+      label: "Google 幻灯片",
       iconSrc: convertGoogleSlidesIcon,
     },
   ],
   [
     {
       action: "jupyter-notebook",
-      label: "Jupyter Notebook",
+      label: "Jupyter 笔记本",
       iconSrc: convertJupyterIcon,
     },
   ],
@@ -79,16 +80,19 @@ function formatReviewedAt(value, part = "date") {
   return new Intl.DateTimeFormat(undefined, options).format(date);
 }
 
-function ReviewedFreshness({ generatedAt }) {
-  return (
-    <>
-      <span className="dashboard-freshness-full">
-        Updated {formatReviewedAt(generatedAt)}
-        <span className="dashboard-freshness-time">, {formatReviewedAt(generatedAt, "time")}</span>
-      </span>
-      <span className="dashboard-freshness-compact">{formatReviewedAt(generatedAt, "compact")}</span>
-    </>
-  );
+function ReviewedFreshness() {
+  const withdrawal = reviewedSnapshot.queries?.withdrawal_monitor?.rows ?? [];
+  const fpd = reviewedSnapshot.queries?.loan_fpd_monitor?.rows ?? [];
+  const latest = (rows, field) => rows.reduce((date, row) => row[field] > date ? row[field] : date, "");
+  const withdrawalDate = latest(withdrawal, "credit_pass_date");
+  const fpdDate = latest(fpd, "loan_date");
+  const label = withdrawalDate === fpdDate
+    ? `数据截至 ${withdrawalDate || "暂无数据"}`
+    : `提现截至 ${withdrawalDate || "暂无数据"}；FPD截至 ${fpdDate || "暂无数据"}`;
+  return <>
+    <span className="dashboard-freshness-full">{label}（业务日期）</span>
+    <span className="dashboard-freshness-compact">{label}</span>
+  </>;
 }
 
 function DataAppVerificationBadge({ verification, canEdit, onVerificationChange }) {
@@ -225,178 +229,19 @@ function DataAppPublishButton({ published, getActionHref, surface }) {
   </>;
 }
 
-function DataAppRefreshControl({ generatedAt, getActionHref, published }) {
-  const trigger = useRef(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [frequency, setFrequency] = useState("weekdays");
-  const [time, setTime] = useState("09:00");
-  const [days, setDays] = useState(["MO", "WE", "FR"]);
-  const schedule = normalizeDataAppRefreshSchedule({
-    frequency,
-    time,
-    ...(frequency === "custom" ? { days } : frequency === "weekly" ? { days: [days[0]] } : {}),
-  });
-  let scheduleAction = null;
-  let scheduleError = "";
-  if (open && schedule) {
-    try {
-      scheduleAction = dataAppActionLink(getActionHref, "schedule-refresh", { schedule });
-    } catch (error) {
-      scheduleError = error.message;
-    }
-  }
-
-  function openSchedule() {
-    if (published === true) rememberRefreshCoachmark();
-    setFrequency("weekdays");
-    setTime("09:00");
-    setDays(["MO", "WE", "FR"]);
-    setOpen(true);
-  }
-
+function DataAppRefreshControl() {
   return (
     <>
-      <Menu
-        label="Refresh data"
-        align="start"
-        contentClassName="dashboard-refresh-menu"
-        open={menuOpen}
-        onOpenChange={setMenuOpen}
-        trigger={
-          <button
-            ref={trigger}
-            type="button"
-            className="freshness freshness-button dashboard-refresh-trigger"
-            aria-label="Refresh data"
-            title="Refresh data or configure a recurring schedule"
-          >
-            <Icon name="refresh" size={16} />
-            <span>
-              <ReviewedFreshness generatedAt={generatedAt} />
-            </span>
-            <Icon name="chevronDown" size={18} className="dashboard-refresh-trigger-chevron" />
-          </button>
-        }
-      >
-        <MenuItem icon="refresh" {...dataAppActionLink(getActionHref, "refresh")}>
-          Refresh now
-        </MenuItem>
-        <MenuItem icon="calendar" onSelect={openSchedule}>
-          Schedule refresh
-        </MenuItem>
-      </Menu>
-      <RefreshSetupCoachmark published={published} blocked={open || menuOpen} anchor={trigger} />
-        <Dialog
-          open={open}
-          title="Schedule refresh"
-          className="dashboard-schedule-dialog"
-          titleInfo="Creates a cloud task for this dashboard's refresh schedule, or updates its existing cloud automation."
-          initialFocusSelector='[aria-label="Repeat schedule"]'
-          onClose={() => setOpen(false)}
-        >
-          <form className="dashboard-schedule-form" onSubmit={(event) => event.preventDefault()}>
-            <div className="dashboard-schedule-field">
-              <span>Repeat</span>
-              <Select
-                label="Repeat schedule"
-                value={frequency}
-                choices={refreshFrequencyOptions.map(({ value }) => value)}
-                onChange={(value) => {
-                  setFrequency(value);
-                  if (value === "weekly") setDays((current) => [current[0] ?? "MO"]);
-                }}
-                formatChoice={(value) => refreshFrequencyOptions.find((option) => option.value === value)?.label}
-                triggerClassName="dashboard-schedule-select"
-                contentClassName="dashboard-schedule-select-menu"
-                align="end"
-                modal={false}
-              />
-            </div>
-            {(frequency === "custom" || frequency === "weekly") && (
-              <div className="dashboard-schedule-days" role="group" aria-label="Repeat on">
-                {dataAppScheduleDays.map(({ value, label, short }) => (
-                  <button
-                    type="button"
-                    key={value}
-                    aria-label={label}
-                    aria-pressed={days.includes(value)}
-                    onClick={() =>
-                      setDays((current) =>
-                        frequency === "weekly"
-                          ? [value]
-                          : current.includes(value)
-                            ? current.filter((day) => day !== value)
-                            : [...current, value],
-                      )
-                    }
-                  >
-                    {short}
-                  </button>
-                ))}
-              </div>
-            )}
-            {frequency !== "hourly" && (
-              <div className="dashboard-schedule-field">
-                <span>Time</span>
-                <Select
-                  label="Refresh time"
-                  value={time}
-                  choices={refreshTimeOptions.map(({ value }) => value)}
-                  onChange={setTime}
-                  formatChoice={(value) => refreshTimeOptions.find((option) => option.value === value)?.label}
-                  triggerClassName="dashboard-schedule-select dashboard-schedule-time"
-                  contentClassName="dashboard-schedule-select-menu dashboard-schedule-time-menu"
-                  align="end"
-                  modal={false}
-                  scrollToSelected
-                />
-              </div>
-            )}
-            {scheduleError ? <p role="alert">{scheduleError}</p> : schedule && !scheduleAction?.href && (
-              <p>Open this app's HTML file directly or use its published URL to schedule refresh.</p>
-            )}
-            <footer className="dashboard-schedule-actions">
-              {scheduleAction?.href ? (
-                <a
-                  className="dashboard-schedule-submit"
-                  role="button"
-                  {...scheduleAction}
-                >
-                  Schedule refresh
-                </a>
-              ) : (
-                <button type="button" className="dashboard-schedule-submit" disabled>
-                  Schedule refresh
-                </button>
-              )}
-            </footer>
-          </form>
-        </Dialog>
+      <span className="freshness freshness-label"><ReviewedFreshness /></span>
+      <button type="button" className="freshness freshness-button"
+        aria-label="刷新页面" title="重新加载已发布看板，不触发底表抽数"
+        onClick={() => window.location.reload()}>
+        <Icon name="refresh" size={16} />
+        <span>刷新页面</span>
+      </button>
     </>
   );
 }
-
-const HeaderActionButton = React.forwardRef(function HeaderActionButton(
-  { label, compactLabel, icon, className = "", ...props },
-  ref,
-) {
-  return (
-    <button
-      {...props}
-      ref={ref}
-      type="button"
-      aria-label={label}
-      className={["dashboard-header-action-button", className].filter(Boolean).join(" ")}
-    >
-      {icon && <DashboardAskIcon name={icon} size={18} />}
-      <span className="dashboard-header-action-label dashboard-header-action-label-full">{label}</span>
-      {compactLabel && (
-        <span className="dashboard-header-action-label dashboard-header-action-label-compact">{compactLabel}</span>
-      )}
-    </button>
-  );
-});
 
 const HeaderOverflowButton = React.forwardRef(function HeaderOverflowButton(props, ref) {
   const tooltipId = React.useId();
@@ -406,13 +251,13 @@ const HeaderOverflowButton = React.forwardRef(function HeaderOverflowButton(prop
       {...props}
       ref={ref}
       type="button"
-      aria-label="More"
+      aria-label="更多工具"
       aria-describedby={tooltipId}
       className="dashboard-header-action-button dashboard-header-overflow-button"
     >
       <Icon name="more" size={18} />
     </button>
-    <Tooltip id={tooltipId} className="topbar-mode-tooltip">More</Tooltip>
+    <Tooltip id={tooltipId} className="topbar-mode-tooltip">更多工具</Tooltip>
     </span>
   );
 });
@@ -432,13 +277,13 @@ function DataAppOverflowMenu({
   const hasUtilityActions = published || canEdit || surface !== "report";
   return (
     <Menu
-      label="More"
+      label="更多工具"
       contentClassName="dashboard-header-action-menu"
       trigger={<HeaderOverflowButton ref={triggerRef} />}
     >
       {canEdit && (
         <MenuItem icon="palette" className="dashboard-action-menu-item" onSelect={onOpenThemes}>
-          Switch theme
+          切换主题
         </MenuItem>
       )}
       {published && (
@@ -447,18 +292,18 @@ function DataAppOverflowMenu({
           className="dashboard-action-menu-item"
           onSelect={() => onAction?.("copy-link")}
         >
-          Copy link
+          复制链接
         </MenuItem>
       )}
       {surface !== "report" && <MenuItem icon="copy" className="dashboard-action-menu-item"
-        {...dataAppActionLink(getActionHref, "duplicate")}>Create a copy</MenuItem>}
+        {...dataAppActionLink(getActionHref, "duplicate")}>创建副本</MenuItem>}
       {canEdit && mode === "edit" && hiddenCount > 0 && (
         <MenuItem icon="eye" className="dashboard-action-menu-item" onSelect={onRestoreHidden}>
-          Restore hidden ({hiddenCount})
+          恢复隐藏内容 ({hiddenCount})
         </MenuItem>
       )}
       {hasUtilityActions && <MenuSeparator />}
-      <MenuGroup label="Export">
+      <MenuGroup label="导出">
         <DataAppConvertItems onAction={onAction} getActionHref={getActionHref} />
       </MenuGroup>
     </Menu>
@@ -742,7 +587,7 @@ export function DataAppTopbar({
             </div>
           )}
           {hiddenCount > 0 && <button type="button" className="dashboard-header-action-button"
-            disabled={saving} onClick={onRestoreHidden}>Restore hidden ({hiddenCount})</button>}
+            disabled={saving} onClick={onRestoreHidden}>恢复隐藏内容 ({hiddenCount})</button>}
           <button type="button" className="dashboard-header-action-button" disabled={saving} onClick={onCancel}>Cancel</button>
           <button type="button" className="dashboard-publish-button" disabled={saving} onClick={onSave}>Save</button>
         </div>}
@@ -761,22 +606,12 @@ export function DataAppTopbar({
           />
           {canEdit && <span className="history-tooltip-trigger" data-delayed-tooltip>
             <button type="button" className="dashboard-header-action-button dashboard-header-edit-button"
-              aria-describedby={editTooltipId} aria-label="Edit text and layout" disabled={saveStatus === "saving"} onClick={() => onModeChange?.("edit")}>
+              aria-describedby={editTooltipId} aria-label="编辑文字和布局" disabled={saveStatus === "saving"} onClick={() => onModeChange?.("edit")}>
               <Icon name="edit" size={18} />
             </button>
-            <Tooltip id={editTooltipId} className="topbar-mode-tooltip">Edit text and layout</Tooltip>
+            <Tooltip id={editTooltipId} className="topbar-mode-tooltip">编辑文字和布局</Tooltip>
           </span>}
-          <HeaderActionButton
-            ref={askButtonRef}
-            label="Ask ChatGPT"
-            icon="chatBubble"
-            compactLabel="Ask"
-            className="dashboard-ask-button"
-            onClick={() => openAskComposer()}
-          />
-          {canEdit && (!published || pendingCodeChanges) && (
-            <DataAppPublishButton published={published} getActionHref={getActionHref} surface={surface} />
-          )}
+
 
         </div>}
       </div>
