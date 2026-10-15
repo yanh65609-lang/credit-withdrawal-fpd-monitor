@@ -29,18 +29,15 @@ function EvidenceChart({spec,rows,...props}){
   const frameRef=useRef(null);
   useEffect(()=>{
     if(!isRateChart||!frameRef.current)return;
-    const fix=()=>{frameRef.current.querySelectorAll("text,span,div").forEach(node=>{
-      if(node.tagName.toLowerCase()!=="text"&&node.children.length)return;
+    const fix=()=>{frameRef.current.querySelectorAll(".recharts-cartesian-axis-tick-value,.chart-tooltip b").forEach(node=>{
       const value=node.textContent?.trim(),match=value?.match(/^(-?\d+(?:\.\d+)?)%$/);
       if(match){const formatted=`${Number(match[1]).toFixed(1)}%`;if(value!==formatted)node.textContent=formatted}
-    });frameRef.current.querySelectorAll(".recharts-label-list text").forEach(node=>{
-      const value=node.textContent?.trim();
-      if(value&&/^-?\d+(?:\.\d+)?$/.test(value))node.textContent=`${Number(value).toFixed(1)}%`;
     });};
     fix();
-    const observer=new MutationObserver(fix);
+    let pending=0;
+    const observer=new MutationObserver(()=>{if(!pending)pending=requestAnimationFrame(()=>{pending=0;fix()})});
     observer.observe(frameRef.current,{childList:true,subtree:true,characterData:true});
-    return()=>observer.disconnect();
+    return()=>{observer.disconnect();cancelAnimationFrame(pending)};
   },[isRateChart,mappedRows]);
   useEffect(()=>{
     if((!spec?.tooltipSort&&!spec?.tooltipOrder)||!frameRef.current)return;

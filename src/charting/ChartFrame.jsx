@@ -1,5 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { ResponsiveContainer } from "recharts";
+
+function ViewportPlot({ children, height }) {
+  const ref = useRef(null);
+  const [visible,setVisible] = useState(false);
+  useEffect(()=>{
+    const element=ref.current;
+    if (!element || typeof IntersectionObserver === 'undefined') { setVisible(true); return; }
+    const observer=new IntersectionObserver(entries=>setVisible(entries[0].isIntersecting),{rootMargin:'400px 0px'});
+    observer.observe(element);
+    const beforePrint=()=>flushSync(()=>setVisible(true));
+    window.addEventListener('beforeprint',beforePrint);
+    return()=>{observer.disconnect();window.removeEventListener('beforeprint',beforePrint)};
+  },[]);
+  return <div ref={ref} style={{width:'100%',height}} data-plot-ready={visible ? 'true' : 'false'}>
+    {visible ? <ResponsiveContainer width="100%" height={height}>{children}</ResponsiveContainer> : null}
+  </div>;
+}
 
 export function collapsedLegendLayout(items) {
   const tops = [...new Set(items.map(item => item.offsetTop))].sort((a, b) => a - b);
@@ -91,7 +109,7 @@ export function ChartFrame({ chart, height = 240, xLabel, xLabelPosition = "bott
         onClick={onResetZoom}>Reset zoom</button>}
       {xLabel && xLabelPosition === "top" && <p className="chart-axis-label chart-axis-label--top">{xLabel}</p>}
       <div ref={frameRef} className="chart-frame" style={{ minHeight: height }} role="group" aria-label={accessibleLabel || xLabel || "Reviewed data chart"} onClick={onChartClick}>
-        <ResponsiveContainer width="100%" height="100%">{chart}</ResponsiveContainer>
+        <ViewportPlot height={height}>{chart}</ViewportPlot>
         {xLabel && xLabelPosition === "inline-right"
           && <p className="chart-axis-label chart-axis-label--inline-right">{xLabel}</p>}
       </div>

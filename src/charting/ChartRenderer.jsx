@@ -175,22 +175,47 @@ function WaterfallShape({ x, y, width, height, fill, radius }) {
 }
 
 const pendingLabelLayouts = new WeakMap();
+const previousLabelLayouts = new WeakMap();
+// Recharts emits cubic SVG paths. Sample the coordinates directly instead of
+// repeatedly invoking synchronous browser path-length/geometry calculations.
+function sampleLabelCurve(path) {
+  const points = [];
+  let start = {x:0,y:0};
+  for (const command of (path.getAttribute('d') || '').match(/[MLC][^MLC]*/gi) || []) {
+    const numbers = (command.slice(1).match(/[-+]?(?:\d*\.?\d+)(?:e[-+]?\d+)?/gi) || []).map(Number);
+    if (command[0].toUpperCase() === 'C' && numbers.length === 6) {
+      for (let step=1;step<=6;step++) {
+        const t=step/6,u=1-t;
+        points.push({x:u*u*u*start.x+3*u*u*t*numbers[0]+3*u*t*t*numbers[2]+t*t*t*numbers[4],y:u*u*u*start.y+3*u*u*t*numbers[1]+3*u*t*t*numbers[3]+t*t*t*numbers[5]});
+      }
+      start={x:numbers[4],y:numbers[5]};
+    } else if (numbers.length >= 2) {
+      start={x:numbers.at(-2),y:numbers.at(-1)};points.push(start);
+    }
+  }
+  return points;
+}
 function layoutValueLabels(svg) {
   const bounds = svg.viewBox.baseVal;
   const right = bounds.width || svg.clientWidth;
   const bottom = bounds.height || svg.clientHeight;
+  const paths = [...svg.querySelectorAll('.recharts-line-curve')];
+  const signature = `${right}:${bottom}:` + paths.map(path=>path.getAttribute('d')).join('|') + [...svg.querySelectorAll('text[data-value-label]')].map(n=>`${n.dataset.ax},${n.dataset.ay},${n.textContent}`).join('|');
+  const labelNodes = [...svg.querySelectorAll('text[data-value-label]')];
+  const previous = previousLabelLayouts.get(svg);
+  if (previous?.signature === signature && previous.nodes.length === labelNodes.length && previous.nodes.every((node,i)=>node===labelNodes[i])) return;
+  previousLabelLayouts.set(svg,{signature,nodes:labelNodes});
   const occupied = [];
-  const curves = [...svg.querySelectorAll('.recharts-line-curve')].flatMap(path => {
-    const length = path.getTotalLength();
-    return Array.from({ length: Math.ceil(length / 5) + 1 }, (_, i) => path.getPointAtLength(Math.min(length, i * 5)));
-  });
+  const curves = paths.flatMap(sampleLabelCurve);
   const labels = [...svg.querySelectorAll('text[data-value-label]')].sort((a,b) => Number(b.dataset.recent) - Number(a.dataset.recent) || Number(b.dataset.index) - Number(a.dataset.index));
+  // Read text sizes together before any SVG writes to avoid layout thrashing.
+  const widths = new Map(labels.map(label=>[label,label.getComputedTextLength()]));
   for (const label of labels) {
     label.style.visibility = 'visible';
     const leader = label.previousElementSibling;
     if (leader?.tagName === 'line') leader.style.visibility = 'hidden';
     const ax = Number(label.dataset.ax), ay = Number(label.dataset.ay);
-    const width = label.getComputedTextLength();
+    const width = widths.get(label);
     const x = Math.max(width / 2 + 8, Math.min(right - width / 2 - 8, ax));
     const offsets = Array.from({length:Number(label.dataset.recent) ? 10 : 3}, (_,i) => Number(label.dataset.series) % 2 ? [24+i*18,-18-i*18] : [-18-i*18,24+i*18]).flat();
     let placed = false;
@@ -223,11 +248,13 @@ function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 
   const interval = Math.max(1, Math.ceil(count / 12));
   if (!recent && index % interval !== 0) return null;
   if (value == null || value === '' || x == null || y == null || ![value,x,y].every(v => Number.isFinite(Number(v)))) return null;
+  const formatted = formatValue(Number(value));
+  const labelText = /^-?\d+(?:\.\d+)?%$/.test(formatted) ? `${Number.parseFloat(formatted).toFixed(1)}%` : formatted;
   return (
     <g>
     <line stroke="var(--secondary)" strokeWidth={0.8} strokeDasharray="2 3" opacity={0.5} style={{visibility:'hidden'}} />
     <text ref={labelRef} data-value-label="true" data-recent={recent ? 1 : 0} data-index={index} data-series={seriesIndex} data-ax={Number(x)+Number(width)/2} data-ay={Number(y)} x={Number(x) + Number(width) / 2} y={Number(y) - 18} fill="var(--secondary)" fontSize={12} textAnchor="middle" paintOrder="stroke" stroke="var(--surface)" strokeWidth={3} strokeLinejoin="round">
-      {formatValue(Number(value))}
+      {labelText}
     </text>
     </g>
   );
