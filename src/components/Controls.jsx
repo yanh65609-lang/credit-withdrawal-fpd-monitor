@@ -83,10 +83,10 @@ export function Filters({ filters = [], queries, values, onChange, sticky = fals
           });
         }
 
-        const label = temporal && filter.mode === "through" ? "Date range"
-          : temporal && /^as of$/i.test(filter.label.trim()) ? "Reporting date" : filter.label;
+        const label = temporal && filter.mode === "through" ? "日期范围"
+          : temporal && /^as of$/i.test(filter.label.trim()) ? "统计日期" : filter.label;
         const formatChoice = temporal ? (choice) => {
-          if (choice === "all") return "All dates";
+          if (choice === "all") return "全部日期";
           if (typeof choice !== "string") return choice;
           const format = (value, year = false) => new Intl.DateTimeFormat(undefined,
             { month: "short", day: "numeric", ...(year ? { year: "numeric" } : {}), timeZone: "UTC" })

@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { dateRangePresets, formatDateRange } from "../date-range.js";
 import { Icon } from "./Icon.jsx";
 
-export function DateRangePicker({ label = "Date range", value, choices: availableDates = [], formatChoice = formatDateRange, onChange, allValue, disabled = false }) {
+export function DateRangePicker({ label = "日期范围", value, choices: availableDates = [], formatChoice = formatDateRange, onChange, allValue, disabled = false }) {
   const choices = useMemo(() => [...new Set(availableDates.filter(date => typeof date === "string"
     && /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date))
     && new Date(date).toISOString().slice(0, 10) === date))].sort().reverse(), [availableDates]);
@@ -27,7 +27,7 @@ export function DateRangePicker({ label = "Date range", value, choices: availabl
   const earliestMonth = earliest?.slice(0, 7);
   const latestMonth = latest?.slice(0, 7);
   const showPreviousMonth = displayMonth > earliestMonth;
-  const fullDate = (date) => new Intl.DateTimeFormat(undefined,
+  const fullDate = (date) => new Intl.DateTimeFormat("zh-CN",
     { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })
     .format(new Date(`${date}T12:00:00Z`));
   function changeMonth(offset) {
@@ -47,28 +47,28 @@ export function DateRangePicker({ label = "Date range", value, choices: availabl
     const calendarMonth = new Date(month);
     calendarMonth.setUTCMonth(calendarMonth.getUTCMonth() + offset);
     const monthValue = calendarMonth.toISOString().slice(0, 7);
-    const heading = new Intl.DateTimeFormat(undefined,
+    const heading = new Intl.DateTimeFormat("zh-CN",
       { month: "long", year: "numeric", timeZone: "UTC" }).format(calendarMonth);
     const firstWeekday = calendarMonth.getUTCDay();
     const daysInMonth = new Date(Date.UTC(calendarMonth.getUTCFullYear(), calendarMonth.getUTCMonth() + 1, 0)).getUTCDate();
 
     return <section key={monthValue} className="date-calendar-month" data-current-month={offset === 0}>
       <header className="date-calendar-header">
-        {offset === -1 ? <button type="button" className="date-calendar-nav" aria-label="Previous month"
+        {offset === -1 ? <button type="button" className="date-calendar-nav" aria-label="上个月"
           disabled={monthValue <= earliestMonth} onClick={() => changeMonth(-1)}>
           <Icon name="chevronLeft" size={16} />
         </button> : <button type="button" className="date-calendar-nav date-calendar-mobile-nav"
-          aria-label="Previous month" disabled={displayMonth <= earliestMonth} onClick={() => changeMonth(-1)}>
+          aria-label="上个月" disabled={displayMonth <= earliestMonth} onClick={() => changeMonth(-1)}>
           <Icon name="chevronLeft" size={16} />
         </button>}
         <strong>{heading}</strong>
-        {offset === 0 ? <button type="button" className="date-calendar-nav" aria-label="Next month"
+        {offset === 0 ? <button type="button" className="date-calendar-nav" aria-label="下个月"
           disabled={displayMonth >= latestMonth} onClick={() => changeMonth(1)}>
           <Icon name="chevronRight" size={16} />
         </button> : <span className="date-calendar-nav-placeholder" aria-hidden="true" />}
       </header>
       <div className="date-calendar-grid" role="group" aria-label={heading}>
-        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) =>
+        {["日", "一", "二", "三", "四", "五", "六"].map((day) =>
           <span key={day} className="date-calendar-weekday" aria-hidden="true">{day}</span>)}
         {Array.from({ length: firstWeekday }, (_, index) =>
           <span key={`empty-${index}`} className="date-calendar-empty" aria-hidden="true" />)}
@@ -91,7 +91,7 @@ export function DateRangePicker({ label = "Date range", value, choices: availabl
     </section>;
   }
 
-  if (!choices.length) return <button type="button" className="filter-trigger" disabled aria-label={label}><span className="filter-label">{label}</span>No dates available</button>;
+  if (!choices.length) return <button type="button" className="filter-trigger" disabled aria-label={label}><span className="filter-label">{label}</span>暂无可用日期</button>;
   return <DropdownPrimitive.Root open={open && !disabled} onOpenChange={(next) => {
     if (next) { setDisplayMonth(selectedEnd?.slice(0, 7)); setPendingStart(null); setPreviewEnd(null); setCustom(false); }
     setOpen(next);
@@ -103,15 +103,15 @@ export function DateRangePicker({ label = "Date range", value, choices: availabl
     <DropdownPrimitive.Portal>
       <DropdownPrimitive.Content className={`popover date-range-calendar${custom ? "" : " date-range-presets"}`} align="start"
         data-single-month={custom && !showPreviousMonth || undefined}
-        sideOffset={7} collisionPadding={12} aria-label="Choose reporting date range">
+        sideOffset={7} collisionPadding={12} aria-label="选择统计日期范围">
         {!custom ? <div className="date-preset-list">
-          <span className="date-calendar-caption">Data through {new Intl.DateTimeFormat(undefined, {month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(new Date(`${latest}T00:00:00Z`))}</span>
+          <span className="date-calendar-caption">数据截至 {new Intl.DateTimeFormat("zh-CN", {month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(new Date(`${latest}T00:00:00Z`))}</span>
           {presets.map(preset => <DropdownPrimitive.Item asChild key={preset.label} onSelect={() => applyRange(preset.start,preset.end,true)}><button type="button" aria-pressed={preset.value === value}>{preset.label}<span>{preset.value === value ? "✓" : ""}</span></button></DropdownPrimitive.Item>)}
-          <DropdownPrimitive.Item asChild onSelect={() => { onChange(allDates); setOpen(false); }}><button type="button">All available dates</button></DropdownPrimitive.Item>
-          <DropdownPrimitive.Item asChild onSelect={event => { event.preventDefault(); setCustom(true); }}><button type="button">Custom range…<Icon name="chevronRight" size={14}/></button></DropdownPrimitive.Item>
-        </div> : <><button type="button" className="date-calendar-back" onClick={() => { setCustom(false); setPendingStart(null); setPreviewEnd(null); }}><Icon name="chevronLeft" size={14} />Date ranges</button>
+          <DropdownPrimitive.Item asChild onSelect={() => { onChange(allDates); setOpen(false); }}><button type="button">全部可用日期</button></DropdownPrimitive.Item>
+          <DropdownPrimitive.Item asChild onSelect={event => { event.preventDefault(); setCustom(true); }}><button type="button">自定义范围…<Icon name="chevronRight" size={14}/></button></DropdownPrimitive.Item>
+        </div> : <><button type="button" className="date-calendar-back" onClick={() => { setCustom(false); setPendingStart(null); setPreviewEnd(null); }}><Icon name="chevronLeft" size={14} />日期范围</button>
         <div className="date-calendar-months">{showPreviousMonth && renderMonth(-1)}{renderMonth(0)}</div>
-        <span className="visually-hidden" aria-live="polite">{pendingStart ? `${formatDateRange(pendingStart)} · Select an end date` : "Select a start date"}</span></>}
+        <span className="visually-hidden" aria-live="polite">{pendingStart ? `${formatDateRange(pendingStart)} · 请选择结束日期` : "请选择开始日期"}</span></>}
       </DropdownPrimitive.Content>
     </DropdownPrimitive.Portal>
   </DropdownPrimitive.Root>;
