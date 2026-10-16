@@ -26,7 +26,6 @@ import { SourceSidebar } from "./components/SourceInspector.jsx";
 import { Dialog, MenuItem, Tooltip } from "./components/ui.jsx";
 import { dataAppActionHref, printDataApp, submitDataAppAction } from "./data-app-actions.js";
 import { DataAppBlockLayoutContext, DataAppContext } from "./DataAppContext.jsx";
-import { canUseDashboardAsk } from "./dashboard-ask.js";
 import { dashboardTabId, dashboardTabSnapshot, dashboardView, drillDashboardView } from "./dashboard-view-state.js";
 import { dashboardUrlWithState, readDashboardUrlState, resolveDashboardUrlFilters } from "./dashboard-url-state.js";
 import {
@@ -1179,7 +1178,7 @@ export function DataAppShell({
       <DataAppBlockLayoutContext.Provider value={blockLayoutContext}>
         <DashboardAskProvider
           canEdit={canEdit}
-          enabled={canUseDashboardAsk({ canEdit, mode })}
+          enabled={false}
           explorationEnabled={mode === "view"}
           dashboardTitle={appTitle}
           onStatus={setActionStatus}
