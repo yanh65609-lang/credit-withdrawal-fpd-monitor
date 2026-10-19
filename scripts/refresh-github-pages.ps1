@@ -49,16 +49,6 @@ function Assert-Export([string]$newPath, [string]$dateColumn, [string[]]$require
 try {
     Set-Location -LiteralPath $projectDir
     Write-Log '开始检查观远数据。'
-    $actualLoanSql = Get-Content -LiteralPath (Join-Path $projectDir 'sql/actual-loans-daily.sql') -Raw -Encoding UTF8
-    $actualLoanResponse = (& guands account preview x5f0e1f1764b14666ac2de23 --sql $actualLoanSql -f json) -join "`n"
-    if ($LASTEXITCODE -ne 0) { throw 'payment_order实际放款数量读取失败。' }
-    $jsonStart = $actualLoanResponse.IndexOf('[')
-    if ($jsonStart -lt 0) { throw 'payment_order返回格式异常。' }
-    $actualLoanResult = $actualLoanResponse.Substring($jsonStart) | ConvertFrom-Json
-    $actualLoanRows = @($actualLoanResult[0].daily_counts | ConvertFrom-Json)
-    if ($actualLoanRows.Count -ne 60 -or $actualLoanRows[-1].loan_date -ne (Get-Date).AddDays(-1).ToString('yyyy-MM-dd')) { throw 'payment_order放款日期不完整，停止发布。' }
-    if (@($actualLoanRows | Where-Object { $null -eq $_.actual_loan_order_cnt -or $_.actual_loan_order_cnt -lt 0 }).Count) { throw 'payment_order放款数量异常。' }
-    $actualLoanRows | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $dataDir 'actual-loans.json') -Encoding UTF8
     guancli auth status | Out-Null
     if ($LASTEXITCODE -ne 0) { throw '观远登录状态检查失败。' }
 
@@ -87,7 +77,6 @@ try {
         throw "业务日期发生倒退，停止发布。提现=$oldWithdrawalMax->$newWithdrawalMax；FPD=$oldFpdMax->$newFpdMax。"
     }
 
-    $hasUnpublishedChanges = $hasUnpublishedChanges -or (@(& $gitExe status --porcelain -- data/actual-loans.json).Count -gt 0)
     $withdrawalChanged = (Get-FileHash -LiteralPath $tempWithdrawal -Algorithm SHA256).Hash -ne
                          (Get-FileHash -LiteralPath $withdrawalFile -Algorithm SHA256).Hash
     $fpdChanged = (Get-FileHash -LiteralPath $tempFpd -Algorithm SHA256).Hash -ne
@@ -113,7 +102,6 @@ try {
     if ($LASTEXITCODE -ne 0) { throw '构建后文件恢复失败。' }
 
     & $gitExe add .gitignore data/withdrawal.csv data/fpd.csv src/data.json src/content/dashboard/DashboardContent.jsx src/content/dashboard/dashboard.css dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1 sql/withdrawal-monitor-with-app-version.sql sql/fpd-monitor-with-app-version.sql
-    & $gitExe add data/actual-loans.json sql/actual-loans-daily.sql src/components/DataComponent.jsx protected-runtime.json
     & $gitExe diff --cached --quiet
     if ($LASTEXITCODE -eq 0) {
         Write-Log '文件无变化，无需发布。'
