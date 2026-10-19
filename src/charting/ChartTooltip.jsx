@@ -73,6 +73,7 @@ export function ChartTooltip({
   payload = [],
   stacked = false,
   vertical = false,
+  sortOrder,
   resolveColor,
   mode = "default",
   xField,
@@ -182,6 +183,13 @@ export function ChartTooltip({
       };
     });
   const ordered = orderTooltipEntries(items, { stacked, vertical });
+  if (sortOrder === "desc" || sortOrder === "asc") ordered.sort((a,b) => {
+    const validA=a.value!=null&&Number.isFinite(Number(a.value));
+    const validB=b.value!=null&&Number.isFinite(Number(b.value));
+    if(validA!==validB)return validA?-1:1;
+    if(!validA)return 0;
+    return sortOrder==="desc"?Number(b.value)-Number(a.value):Number(a.value)-Number(b.value);
+  });
   // Comparison order must not flip when the previous value exceeds the current one.
   if (ordered.some(item => /previous/i.test(item.dataKey))) ordered.sort((a,b) => Number(/previous/i.test(a.dataKey)) - Number(/previous/i.test(b.dataKey)));
   const comparisonKeys = [...new Set(ordered.map(item => baseField(item.dataKey)))];

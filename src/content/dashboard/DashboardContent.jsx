@@ -42,12 +42,14 @@ function EvidenceChart({spec,rows,...props}){
     const target=displayField(field),value=row[field];
     return [target,target.endsWith(" (%)")&&value!=null?Number(value)*100:value];
   }))}));
-  const legendLabels=spec?.legend?.labels?Object.fromEntries(Object.entries(spec.legend.labels).map(([field,label])=>[displayField(field),label])):undefined;
+  const metricLabels={t0:"T0提现申请率",t7:"T7提现申请率",util:"额度使用率",avgCreditLimit:"人均授信额度",avgT0CreditLimit:"T0提现申请客户人均授信额度",avgT0LoanAmount:"T0客户人均放款金额",loan_order_cnt:"放款订单数",count:"客户人数",share:"客户占比",fpd0AmountRate:"FPD0金额逾期率",fpd10AmountRate:"FPD10金额逾期率",fpd0Rate:"FPD0订单逾期率",fpd10Rate:"FPD10订单逾期率"};
+  const categoryLabels={Android:"安卓",iOS:"苹果",Facebook:"脸书",Google:"谷歌",Organic:"自然量",Tiktok:"抖音",ASA:"苹果搜索广告",UNKNOWN:"未知"};
+  const legendLabels={...Object.fromEntries(rateFields.map(field=>[displayField(field),metricLabels[field]??spec.yLabel??"指标值"])),...Object.fromEntries(Object.entries(spec?.legend?.labels??{}).map(([field,label])=>[displayField(field),metricLabels[field]??label])),...(spec.series?Object.fromEntries([...new Set(rows.map(row=>String(row[spec.series])))].map(value=>[value,categoryLabels[value]??value])):{})};
   const uniquePeriods=new Set(mappedRows.map(row=>row[spec?.x])).size;
   const seriesCount=spec?.series?new Set(mappedRows.map(row=>row[spec.series])).size:(spec?.fields?.length??1);
   const showValues=spec?.showValues??(spec?.type==="line"&&seriesCount<=8);
   const isRateChart=rateFields.some(field=>displayField(field).endsWith(" (%)"));
-  const mappedSpec={...spec,colors:{...spec?.colors,"1.2.9":"#d32f2f"},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,...(legendLabels?{legend:{...spec.legend,labels:legendLabels}}:{})};
+  const mappedSpec={...spec,tooltipSort:"desc",colors:{...spec?.colors,"1.2.9":"#d32f2f"},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,legend:{...spec.legend,labels:legendLabels}};
   const frameRef=useRef(null);
   useEffect(()=>{
     if(!isRateChart||!frameRef.current)return;
@@ -61,23 +63,6 @@ function EvidenceChart({spec,rows,...props}){
     observer.observe(frameRef.current,{childList:true,subtree:true,characterData:true});
     return()=>{observer.disconnect();cancelAnimationFrame(pending)};
   },[isRateChart,mappedRows]);
-  useEffect(()=>{
-    if((!spec?.tooltipSort&&!spec?.tooltipOrder)||!frameRef.current)return;
-    const sortTooltip=()=>{
-      const tooltip=frameRef.current?.querySelector(".chart-tooltip");
-      if(!tooltip)return;
-      const items=[...tooltip.children].filter(node=>node.tagName==="SPAN"&&node.querySelector("b"));
-      const value=node=>Number.parseFloat(node.querySelector("b")?.textContent?.replace(/[^\d.-]/g,"")||"0");
-      const label=node=>node.textContent.replace(node.querySelector("b")?.textContent||"","").trim();
-      const ranks=new Map((spec.tooltipOrder||[]).map((item,index)=>[String(item),index]));
-      const sorted=[...items].sort((a,b)=>spec.tooltipOrder?(ranks.get(label(a))??999)-(ranks.get(label(b))??999):spec.tooltipSort==="desc"?value(b)-value(a):value(a)-value(b));
-      if(sorted.some((node,index)=>node!==items[index]))sorted.forEach(node=>tooltip.appendChild(node));
-    };
-    sortTooltip();
-    const observer=new MutationObserver(sortTooltip);
-    observer.observe(frameRef.current,{childList:true,subtree:true,characterData:true});
-    return()=>observer.disconnect();
-  },[spec?.tooltipSort,spec?.tooltipOrder,mappedRows]);
   return <div ref={frameRef} className={isRateChart?"rate-chart-frame":"chart-frame"}><BaseEvidenceChart spec={mappedSpec} rows={mappedRows} {...props}/></div>;
 }
 function M({id,q,title,value,note,rows}){return <MetricCard variant="card" id={id} queryId={q} title={title} value={value} description={note} sourceRows={rows}/>}

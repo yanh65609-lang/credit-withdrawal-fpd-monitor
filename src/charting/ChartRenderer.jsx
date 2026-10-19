@@ -820,6 +820,7 @@ function StandardChartRenderer({
       : { fill: "var(--text)", fillOpacity: 0.06 };
   const tooltipTemplate = tooltipContent ??
         <ChartTooltip
+          sortOrder={spec.tooltipSort}
           stacked={stacked}
           vertical={["line", "area", "sparkline"].includes(type)}
           mode={["heatmap", "scatter", "boxPlot", "pie"].includes(type) ? type : "default"}
