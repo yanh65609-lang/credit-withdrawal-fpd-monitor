@@ -12,6 +12,7 @@ const fpdRows=readCsv(fpdInput).map(row=>({...row,
   credit_pass_date:row.loan_date
 })).sort((a,b)=>String(a.loan_date).localeCompare(String(b.loan_date)));
 const dates=[...withdrawalRows.map(r=>r.credit_pass_date),...fpdRows.map(r=>r.loan_date)].sort();
+const actualLoanRows=JSON.parse(fs.readFileSync(new URL('../data/actual-loans.json',import.meta.url),'utf8'));
 const products=[...new Set([...withdrawalRows,...fpdRows].map(r=>r.product).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
 const originalProducts=[...new Set([...withdrawalRows,...fpdRows].map(r=>r.original_product).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
 const risks=[...new Set([...withdrawalRows,...fpdRows].map(r=>r.risk_level).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
@@ -25,6 +26,7 @@ const snapshot={id:'credit-withdrawal-fpd-monitor-clear-defaults-v1',surface:'da
   {id:'media',label:'媒体渠道',field:'media',multiple:true,defaultValue:[]},
   {id:'loan_type',label:'首复借',field:'loan_type',multiple:true,defaultValue:[],queryIds:['loan_fpd_monitor']}],queries:{
   filter_options:{rows:filterRows,source:{label:'筛选项升序辅助维度',metricDefinitions:[]}},
+  actual_loans:{rows:actualLoanRows,source:{label:'payment_order实际放款每日订单数',executedAt:new Date().toISOString(),sql:fs.readFileSync(new URL('../sql/actual-loans-daily.sql',import.meta.url),'utf8'),metricDefinitions:[{label:'T0放款数',definition:'按payment_order.created_time放款日，is_delete=N，COUNT(DISTINCT order_id)。统计全部正式放款订单，不限定授信日或首复借，仅随日期范围变化。'}]}},
   withdrawal_monitor:{rows:withdrawalRows,source:{label:'withdrawal.csv · 授信后提现每日聚合',files:[withdrawalInput],metricDefinitions:[
     {label:'T0/T7提现申请率',definition:'窗口内首笔提现申请客户数 / 授信通过客户数；T7仅成熟客群进入分母。'},
     {label:'T0额度使用率',definition:'T0第一笔提现申请金额 / 对应授信额度。'},

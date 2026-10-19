@@ -47,7 +47,6 @@ export function ComponentActions({
     }>
       {canEdit && component.chart
         && <MenuItem icon="edit" onSelect={() => onOpen("explore", component)}>Edit chart</MenuItem>}
-      <MenuItem icon="database" onSelect={() => onOpen("source", component)}>View data source</MenuItem>
       {onCopy && component.chart && <ChartImageActions component={component} onCopy={onCopy} />}
       {onCopy && <MenuItem icon="copy" onSelect={() => onCopy("data", component)}>Copy data</MenuItem>}
       {published && onCopy && validComponentId(component.id) && <MenuItem icon="link"
