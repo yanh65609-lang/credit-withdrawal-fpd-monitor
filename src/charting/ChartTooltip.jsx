@@ -74,6 +74,7 @@ export function ChartTooltip({
   stacked = false,
   vertical = false,
   sortOrder,
+  entryOrder,
   resolveColor,
   mode = "default",
   xField,
@@ -183,7 +184,10 @@ export function ChartTooltip({
       };
     });
   const ordered = orderTooltipEntries(items, { stacked, vertical });
-  if (sortOrder === "desc" || sortOrder === "asc") ordered.sort((a,b) => {
+  if (Array.isArray(entryOrder) && entryOrder.length) {
+    const ranks=new Map(entryOrder.map((value,index)=>[String(value),index]));
+    ordered.sort((a,b)=>(ranks.get(String(baseField(a.dataKey??a.name)))??999)-(ranks.get(String(baseField(b.dataKey??b.name)))??999));
+  } else if (sortOrder === "desc" || sortOrder === "asc") ordered.sort((a,b) => {
     const validA=a.value!=null&&Number.isFinite(Number(a.value));
     const validB=b.value!=null&&Number.isFinite(Number(b.value));
     if(validA!==validB)return validA?-1:1;

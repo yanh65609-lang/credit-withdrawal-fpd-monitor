@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useRef,useState} from "react";
 import {EvidenceChart as BaseEvidenceChart,Filters as BaseFilters,MetricCard,SegmentedControl,SectionHeader,useDataApp,useDashboardTabs} from "../../data-app-public.jsx";
 import "./dashboard.css";
+import {fixedDimensionOrder} from "./dimension-order.js";
 const tabs=[{id:"withdrawal",label:"01_T0/T7提现率"},{id:"fpd",label:"02_提现订单及FPD"}],baseFilterIds=["credit_pass_date","original_product","product","app_version","credit_type","risk_level","platform","media"];
 const riskOrder=["RG0","RG1","RG2","RG3","RG4","RG5","RG6","RG7"],creditLimitOrder=["200万及以上","180万","150万","120万","100万","80万","60万","50万","40万","30万"];
 const platformOrder=["Android","iOS","未知"],mediaOrder=["ASA","Facebook","Google","Organic","Tiktok","其他","空值"],originalProductOrder=["CL_01","CL_03","CL_04","CL_05","CL_06","CL_07","CL_08"],productOrder=["等本","小等本","灵活产品","营销产品","其他产品"],loanTypeOrder=["首借","复借"],utilizationOrder=["100%以下","100%及以上","额度缺失"];
@@ -43,13 +44,13 @@ function EvidenceChart({spec,rows,...props}){
     return [target,target.endsWith(" (%)")&&value!=null?Number(value)*100:value];
   }))}));
   const metricLabels={t0:"T0提现申请率",t7:"T7提现申请率",util:"额度使用率",avgCreditLimit:"人均授信额度",avgT0CreditLimit:"T0提现申请客户人均授信额度",avgT0LoanAmount:"T0客户人均放款金额",loan_order_cnt:"放款订单数",count:"客户人数",share:"客户占比",fpd0AmountRate:"FPD0金额逾期率",fpd10AmountRate:"FPD10金额逾期率",fpd0Rate:"FPD0订单逾期率",fpd10Rate:"FPD10订单逾期率"};
-  const categoryLabels={Android:"安卓",iOS:"苹果",Facebook:"脸书",Google:"谷歌",Organic:"自然量",Tiktok:"抖音",ASA:"苹果搜索广告",UNKNOWN:"未知"};
-  const legendLabels={...Object.fromEntries(rateFields.map(field=>[displayField(field),metricLabels[field]??spec.yLabel??"指标值"])),...Object.fromEntries(Object.entries(spec?.legend?.labels??{}).map(([field,label])=>[displayField(field),metricLabels[field]??label])),...(spec.series?Object.fromEntries([...new Set(rows.map(row=>String(row[spec.series])))].map(value=>[value,categoryLabels[value]??value])):{})};
+  const dimensionOrder=spec.series?fixedDimensionOrder(rows.map(row=>row[spec.series]),spec.tooltipOrder):[...new Set(rateFields.map(displayField))];
+  const legendLabels={...Object.fromEntries(rateFields.map(field=>[displayField(field),metricLabels[field]??spec.yLabel??"指标值"])),...Object.fromEntries(Object.entries(spec?.legend?.labels??{}).map(([field,label])=>[displayField(field),metricLabels[field]??label])),...(spec.series?Object.fromEntries(dimensionOrder.map(value=>[value,value])):{})};
   const uniquePeriods=new Set(mappedRows.map(row=>row[spec?.x])).size;
   const seriesCount=spec?.series?new Set(mappedRows.map(row=>row[spec.series])).size:(spec?.fields?.length??1);
   const showValues=spec?.showValues??(spec?.type==="line"&&seriesCount<=8);
   const isRateChart=rateFields.some(field=>displayField(field).endsWith(" (%)"));
-  const mappedSpec={...spec,tooltipSort:"desc",colors:{...spec?.colors,"1.2.9":"#d32f2f"},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,legend:{...spec.legend,labels:legendLabels}};
+  const mappedSpec={...spec,tooltipSort:"dimension",tooltipOrder:dimensionOrder,colors:{...spec?.colors,"1.2.9":"#d32f2f"},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,legend:{...spec.legend,labels:legendLabels}};
   const frameRef=useRef(null);
   useEffect(()=>{
     if(!isRateChart||!frameRef.current)return;

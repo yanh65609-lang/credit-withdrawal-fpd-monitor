@@ -821,6 +821,7 @@ function StandardChartRenderer({
   const tooltipTemplate = tooltipContent ??
         <ChartTooltip
           sortOrder={spec.tooltipSort}
+          entryOrder={spec.tooltipOrder}
           stacked={stacked}
           vertical={["line", "area", "sparkline"].includes(type)}
           mode={["heatmap", "scatter", "boxPlot", "pie"].includes(type) ? type : "default"}
@@ -903,6 +904,10 @@ function StandardChartRenderer({
                 : /previous/i.test(field) ? "square square-previous" : "square",
           }))
         : [];
+  if(Array.isArray(spec.tooltipOrder)&&spec.tooltipOrder.length){
+    const ranks=new Map(spec.tooltipOrder.map((value,index)=>[String(value),index]));
+    fullLegend.sort((a,b)=>(ranks.get(String(a.value))??999)-(ranks.get(String(b.value))??999));
+  }
   const comparisonFields = fields.filter(field => /previous/i.test(field));
   const groupedComparison = spec.legend?.comparisons === "grouped" && comparisonFields.length > 1;
   const legend = groupedComparison ? fullLegend.filter(item => !comparisonFields.includes(item.value)).map(item => {
