@@ -333,18 +333,14 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
 .dashboard-refresh-coachmark p { margin: 8px 0 0; font: 400 14px/20px var(--font-sans); color: var(--secondary); }
 @media print { .dashboard-refresh-coachmark { display: none !important; } }
 .dashboard-tabs-row {
-  width: min(calc(1320px + 2 * var(--data-app-dashboard-gutter)), 100%);
-  margin-inline: auto;
   min-width: 0;
 }
 .dashboard-tabs-inner {
-  width: min(calc(1320px + 2 * var(--data-app-dashboard-gutter)), 100%);
-  margin: 0 0 8px;
-  margin-inline: auto;
-  overflow: hidden;
-  padding: 4px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--secondary) 9%, transparent);
+  margin-top: -14px;
+  margin-bottom: -1px;
+  overflow-x: auto;
+  padding-top: 8px;
+  padding-bottom: 1px;
   scrollbar-width: none;
 }
 .dashboard-tabs-inner::-webkit-scrollbar {
@@ -358,9 +354,8 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   --dashboard-tab-drag-source-opacity: 0.18;
   --dashboard-tab-drag-source-fade-duration: 80ms;
   display: flex;
-  width: 100%;
-  min-width: 0;
-  align-items: stretch;
+  min-width: max-content;
+  align-items: flex-end;
   gap: 4px;
 }
 .dashboard-tabs > .tab-active-indicator {
@@ -369,10 +364,8 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
 .dashboard-tab {
   position: relative;
   display: inline-grid;
-  width: 100%;
-  min-height: 48px;
-  padding: 0 16px;
-  border-radius: 9px;
+  min-height: 42px;
+  padding: 0 10px 6px;
   border: 0;
   background: transparent;
   color: var(--secondary);
@@ -382,11 +375,10 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
 .dashboard-tab-item {
   position: relative;
   display: inline-grid;
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 auto;
 }
 .dashboard-tab {
-  max-width: none;
+  max-width: 180px;
   touch-action: pan-y;
   transition: opacity var(--dashboard-tab-drag-source-fade-duration) ease-out;
   user-select: none;
@@ -404,7 +396,7 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
 }
 .dashboard-tab-item:first-child .dashboard-tab {
-  padding-left: 16px;
+  padding-left: 0;
 }
 .dashboard-tab-item:first-child .dashboard-tab::after {
   left: 0;
@@ -422,12 +414,7 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   content: "";
   opacity: 0;
 }
-.dashboard-tab[aria-selected="true"] {
-  background: var(--surface);
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--text) 9%, transparent);
-  color: var(--text);
-  font-weight: 600;
-}
+.dashboard-tab[aria-selected="true"] { color: var(--text); }
 .dashboard-tab[aria-selected="true"]::after { opacity: 0; }
 .dashboard-topbar[data-mode="edit"] .dashboard-tab {
   cursor: pointer;

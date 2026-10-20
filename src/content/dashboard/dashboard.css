@@ -7,6 +7,8 @@ main.page[data-data-app-content="dashboard"] {
   --chart-5: #8390ad;
   --chart-6: #75b39f;
 }
+.dashboard-tabs-inner { display: flex; justify-content: center; }
+.dashboard-tabs { justify-content: center; }
 .monitor-hero { padding: 30px 2px 20px; border-bottom: 1px solid color-mix(in srgb, var(--secondary) 16%, transparent); }
 .monitor-hero h1 { margin: 0 0 9px; color: #263a32; font-size: 34px; font-weight: 560; letter-spacing: -.045em; }
 .monitor-hero p { margin: 0; color: #758078; }
