@@ -60,7 +60,8 @@ function EvidenceChart({spec,rows,wrapperClassName="",...props}){
     });
       if(frameRef.current.classList.contains("withdraw-rate-trend")){
         frameRef.current.querySelectorAll(".recharts-label-list").forEach((group,index)=>group.querySelectorAll("text[data-ay]").forEach(label=>{
-          label.setAttribute("y",String(Number(label.dataset.ay)+(index===0?22:-12)));
+          const desired=String(Number(label.dataset.ay)+(index===0?22:-12));
+          if(label.getAttribute("y")!==desired)label.setAttribute("y",desired);
           label.style.transform="none";
         }));
       }
@@ -69,7 +70,7 @@ function EvidenceChart({spec,rows,wrapperClassName="",...props}){
     let pending=0,timer=0;
     const schedule=()=>{if(!pending)pending=requestAnimationFrame(()=>{pending=0;fix();clearTimeout(timer);timer=setTimeout(fix,80)})};
     const observer=new MutationObserver(schedule);
-    observer.observe(frameRef.current,{childList:true,subtree:true,characterData:true});
+    observer.observe(frameRef.current,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:["y"]});
     const resizeObserver=new ResizeObserver(schedule);resizeObserver.observe(frameRef.current);
     schedule();
     return()=>{observer.disconnect();resizeObserver.disconnect();cancelAnimationFrame(pending);clearTimeout(timer)};
