@@ -336,7 +336,9 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   min-width: 0;
 }
 .dashboard-tabs-inner {
+  width: min(calc(1320px + 2 * var(--data-app-dashboard-gutter)), 100%);
   margin: 0 0 8px;
+  margin-inline: auto;
   overflow: hidden;
   padding: 4px;
   border-radius: 12px;
