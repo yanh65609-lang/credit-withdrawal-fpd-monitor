@@ -57,12 +57,22 @@ function EvidenceChart({spec,rows,wrapperClassName="",...props}){
     const fix=()=>{frameRef.current.querySelectorAll(".recharts-cartesian-axis-tick-value,.chart-tooltip b").forEach(node=>{
       const value=node.textContent?.trim(),match=value?.match(/^(-?\d+(?:\.\d+)?)%$/);
       if(match){const formatted=`${Number(match[1]).toFixed(1)}%`;if(value!==formatted)node.textContent=formatted}
-    });};
+    });
+      if(frameRef.current.classList.contains("withdraw-rate-trend")){
+        frameRef.current.querySelectorAll(".recharts-label-list").forEach((group,index)=>group.querySelectorAll("text[data-ay]").forEach(label=>{
+          label.setAttribute("y",String(Number(label.dataset.ay)+(index===0?22:-12)));
+          label.style.transform="none";
+        }));
+      }
+    };
     fix();
-    let pending=0;
-    const observer=new MutationObserver(()=>{if(!pending)pending=requestAnimationFrame(()=>{pending=0;fix()})});
+    let pending=0,timer=0;
+    const schedule=()=>{if(!pending)pending=requestAnimationFrame(()=>{pending=0;fix();clearTimeout(timer);timer=setTimeout(fix,80)})};
+    const observer=new MutationObserver(schedule);
     observer.observe(frameRef.current,{childList:true,subtree:true,characterData:true});
-    return()=>{observer.disconnect();cancelAnimationFrame(pending)};
+    const resizeObserver=new ResizeObserver(schedule);resizeObserver.observe(frameRef.current);
+    schedule();
+    return()=>{observer.disconnect();resizeObserver.disconnect();cancelAnimationFrame(pending);clearTimeout(timer)};
   },[isRateChart,mappedRows]);
   return <div ref={frameRef} className={`${isRateChart?"rate-chart-frame":"chart-frame"} ${wrapperClassName}`.trim()}><BaseEvidenceChart spec={mappedSpec} rows={mappedRows} {...props}/></div>;
 }
