@@ -41,4 +41,4 @@ main.page[data-data-app-content="dashboard"] {
 @media (max-width: 760px) { .monitor-hero { padding-top: 20px; } .monitor-hero h1 { font-size: 29px; } .metric-grid, .metric-grid--four, .chart-grid, .risk-number-grid { grid-template-columns: 1fr; } }
 .rate-chart-frame,.chart-frame{min-width:0;width:100%}
 .rate-chart-frame .recharts-line-dot{r:3.2px;stroke:var(--surface);stroke-width:1.2px}
-.withdraw-rate-trend .recharts-label-list text{transform:translate(0,34px)}
+.withdraw-rate-trend .recharts-label-list:nth-last-child(2) text{transform:translate(0,34px)}
