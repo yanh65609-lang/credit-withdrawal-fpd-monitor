@@ -17,8 +17,8 @@
 }
 
 .dashboard-root {
-  --dashboard-topbar-base-height: 52px;
-  --dashboard-tabs-expanded-height: 36px;
+  --dashboard-topbar-base-height: 88px;
+  --dashboard-tabs-expanded-height: 64px;
   --dashboard-tabs-visible-height: 0px;
   --dashboard-tabs-height-duration: var(--motion-duration-fast);
   --dashboard-tabs-height-easing: var(--motion-easing-emphasized);
@@ -319,7 +319,7 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
 }
 .dashboard-topbar-inner {
   display: flex;
-  min-height: 51px;
+  min-height: 87px;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
@@ -336,11 +336,11 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   min-width: 0;
 }
 .dashboard-tabs-inner {
-  margin-top: -14px;
-  margin-bottom: -1px;
-  overflow-x: auto;
-  padding-top: 8px;
-  padding-bottom: 1px;
+  margin: 0 0 8px;
+  overflow: hidden;
+  padding: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--secondary) 9%, transparent);
   scrollbar-width: none;
 }
 .dashboard-tabs-inner::-webkit-scrollbar {
@@ -354,8 +354,9 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   --dashboard-tab-drag-source-opacity: 0.18;
   --dashboard-tab-drag-source-fade-duration: 80ms;
   display: flex;
-  min-width: max-content;
-  align-items: flex-end;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
   gap: 4px;
 }
 .dashboard-tabs > .tab-active-indicator {
@@ -364,8 +365,10 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
 .dashboard-tab {
   position: relative;
   display: inline-grid;
-  min-height: 42px;
-  padding: 0 10px 6px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 9px;
   border: 0;
   background: transparent;
   color: var(--secondary);
@@ -375,10 +378,11 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
 .dashboard-tab-item {
   position: relative;
   display: inline-grid;
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
 }
 .dashboard-tab {
-  max-width: 180px;
+  max-width: none;
   touch-action: pan-y;
   transition: opacity var(--dashboard-tab-drag-source-fade-duration) ease-out;
   user-select: none;
@@ -396,7 +400,7 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
 }
 .dashboard-tab-item:first-child .dashboard-tab {
-  padding-left: 0;
+  padding-left: 16px;
 }
 .dashboard-tab-item:first-child .dashboard-tab::after {
   left: 0;
@@ -414,7 +418,12 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   content: "";
   opacity: 0;
 }
-.dashboard-tab[aria-selected="true"] { color: var(--text); }
+.dashboard-tab[aria-selected="true"] {
+  background: var(--surface);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--text) 9%, transparent);
+  color: var(--text);
+  font-weight: 600;
+}
 .dashboard-tab[aria-selected="true"]::after { opacity: 0; }
 .dashboard-topbar[data-mode="edit"] .dashboard-tab {
   cursor: pointer;
@@ -1124,7 +1133,20 @@ header[data-data-app-chrome="topbar"] :is(strong, span, button, a) {
   }
 }
 .dashboard-topbar-copy, .dashboard-topbar-actions, .dashboard-topbar-edit-controls { display: flex; min-width: 0; align-items: center; gap: 10px; }
-.dashboard-topbar-copy { flex: 1 1 auto; }
+.dashboard-topbar-copy {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.dashboard-topbar-copy::after {
+  flex-basis: 100%;
+  order: 99;
+  color: var(--data-app-safe-chrome-secondary, var(--secondary));
+  content: "授信后提现与 FPD 口径监控";
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+}
 .dashboard-topbar-actions, .dashboard-topbar-edit-controls { flex: 0 0 auto; }
 .dashboard-verification {
   position: relative;
@@ -1185,7 +1207,7 @@ button.dashboard-verification-trigger:hover {
 .dashboard-verification-dialog .dialog-content { font-size: 14px; line-height: 1.5; }
 .dashboard-verification-checklist { display: grid; gap: 10px; margin: 16px 0; padding-left: 20px; }
 .dashboard-verification-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
-.dashboard-topbar-title { min-width: 0; overflow: hidden; color: var(--data-app-safe-chrome-foreground, var(--text)); font-size: 14px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-topbar-title { min-width: 0; overflow: hidden; color: var(--data-app-safe-chrome-foreground, var(--text)); font-size: 30px; font-weight: 700; line-height: 1.15; letter-spacing: -.035em; text-overflow: ellipsis; white-space: nowrap; }
 .dashboard-topbar-title[contenteditable="true"] { margin: 0 -6px 0 -6px; padding: 4px 6px; }
 .freshness { margin: 0; color: var(--data-app-safe-chrome-secondary, var(--secondary)); font-size: 12px; }
 .freshness-button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 5px 7px; border: 0; border-radius: 6px; background: transparent; color: var(--data-app-safe-chrome-secondary, var(--secondary)); font-size: 12px; text-decoration: none; }
@@ -1480,13 +1502,13 @@ button.dashboard-verification-trigger:hover {
   z-index: calc(var(--layer-header) - 1);
   top: calc(var(--dashboard-topbar-base-height, 52px) + var(--dashboard-tabs-visible-height, 0px));
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   /* Escape the centered content column using the page width after scrollbar gutters. */
   margin-inline: calc((100% - var(--filter-bar-page-width, 100vw)) / 2);
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  padding: 20px calc((var(--filter-bar-page-width, 100vw) - 100%) / 2);
+  overflow: visible;
+  padding: 18px max(24px, calc((var(--filter-bar-page-width, 100vw) - 100%) / 2));
   border-bottom: var(--hairline, 1px) solid transparent;
   background: transparent;
   scrollbar-width: none;
@@ -3932,6 +3954,8 @@ main[data-data-app-content="report"] .report-recommendations > p {
   .dashboard-topbar-copy {
     gap: 6px;
   }
+  .dashboard-topbar-title { font-size: 22px; }
+  .dashboard-topbar-copy::after { display: none; }
   .dashboard-topbar .freshness-button {
     display: inline-flex;
   }
