@@ -35,7 +35,7 @@ function Filters(props){
   const scopedFilters=useMemo(()=>filters.map(filter=>["original_product","risk_level","app_version"].includes(filter.id)?{...filter,queryIds:[`date_options_${filter.id}`]}:filter),[filters]);
   return <BaseFilters {...props} queries={productQueries} filters={scopedFilters}/>;
 }
-function EvidenceChart({spec,rows,...props}){
+function EvidenceChart({spec,rows,wrapperClassName="",...props}){
   const alias=field=>rateAliases[field]??field;
   const displayField=field=>/(?:Rate|Share)$/.test(alias(field))?`${alias(field)} (%)`:alias(field);
   const rateFields=[spec?.y,...(spec?.fields??[])].filter(Boolean);
@@ -64,7 +64,7 @@ function EvidenceChart({spec,rows,...props}){
     observer.observe(frameRef.current,{childList:true,subtree:true,characterData:true});
     return()=>{observer.disconnect();cancelAnimationFrame(pending)};
   },[isRateChart,mappedRows]);
-  return <div ref={frameRef} className={isRateChart?"rate-chart-frame":"chart-frame"}><BaseEvidenceChart spec={mappedSpec} rows={mappedRows} {...props}/></div>;
+  return <div ref={frameRef} className={`${isRateChart?"rate-chart-frame":"chart-frame"} ${wrapperClassName}`.trim()}><BaseEvidenceChart spec={mappedSpec} rows={mappedRows} {...props}/></div>;
 }
 function M({id,q,title,value,note,rows}){return <MetricCard variant="card" id={id} queryId={q} title={title} value={value} description={note} sourceRows={rows}/>}
 function TrendDimensionSelector({value,onChange,options}){return <div className="trend-dimension-selector" role="group" aria-label="趋势拆分维度">{options.map(option=><button key={option.value} type="button" className={value===option.value?"is-active":""} aria-pressed={value===option.value} onClick={()=>onChange(option.value)}>{option.label}</button>)}</div>}
@@ -96,7 +96,7 @@ function Withdrawal({rows,grain,cp}){
   const newCustomerRows=rows.filter(r=>r.credit_type==="01_首次授信"),versions=versionDistribution(newCustomerRows,grain),versionShareSpec={type:"stackedBar100",x:"label",y:"share",series:"version",yLabel:"客户占比",showValues:false,tooltipOrder:versions.versions},versionCountSpec={type:"stackedBar",x:"label",y:"count",series:"version",yLabel:"客户数",showValues:false,tooltipOrder:versions.versions};
   return <>
     <section className="metric-grid"><M id="credit" q={q} title="昨日通过量" value={num(latest?.credit_pass_customer_cnt)} note={sd(latest?.period)} rows={rows}/><M id="t0" q={q} title="T0提现申请率" value={pct(latest?.t0)} note={`申请人数 ${num(latest?.t0_withdraw_numerator)} / 授信通过人数 ${num(latest?.t0_withdraw_denominator)}`} rows={rows}/><M id="t0-loans" q={q} title="T0放款数" value={num(latest?.t0LoanCustomers)} note="关联昨日通过提现" rows={rows}/><M id="t7" q={q} title="T7提现申请率" value={pct(mature?.t7)} note={`最新成熟日 ${sd(mature?.period)}`} rows={rows}/><M id="util" q={q} title="T0额度使用率" value={pct(latest?.util)} note="申请金额 / 授信额度" rows={rows}/></section>
-    <section className="trend-section"><TrendDimensionSelector value={trendDimension} onChange={value=>{cp("withdraw").onVisibleSeriesChange(undefined);setTrendDimension(value)}} options={trendOptions}/><EvidenceChart id="withdraw" queryId={q} title={trendDimension==="overall"?"T0 / T7提现申请率趋势":"各分组T0提现申请率趋势"} spec={trendSpec} rows={trendRows} sourceRows={rows} height={340} {...cp("withdraw")}/></section>
+    <section className="trend-section"><TrendDimensionSelector value={trendDimension} onChange={value=>{cp("withdraw").onVisibleSeriesChange(undefined);setTrendDimension(value)}} options={trendOptions}/><EvidenceChart id="withdraw" queryId={q} title={trendDimension==="overall"?"T0 / T7提现申请率趋势":"各分组T0提现申请率趋势"} spec={trendSpec} rows={trendRows} sourceRows={rows} height={340} wrapperClassName={trendDimension==="overall"?"withdraw-rate-trend":""} {...cp("withdraw")}/></section>
     <section className="trend-section"><TrendDimensionSelector value={utilDimension} onChange={value=>{cp("util-trend").onVisibleSeriesChange(undefined);setUtilDimension(value)}} options={trendOptions}/><EvidenceChart id="util-trend" queryId={q} title={utilDimension==="overall"?"T0额度使用率趋势":"各分组T0额度使用率趋势"} spec={utilSpec} rows={utilRows} sourceRows={rows} height={340} {...cp("util-trend")}/></section>
     <section className="trend-section"><TrendDimensionSelector value={avgCreditDimension} onChange={value=>{cp("avg-credit-limit").onVisibleSeriesChange(undefined);setAvgCreditDimension(value)}} options={trendOptions}/><EvidenceChart id="avg-credit-limit" queryId={q} title={avgCreditDimension==="overall"?"授信通过客户人均授信额度":"各分组授信通过客户人均授信额度趋势"} description="授信通过额度合计 / 授信通过客户数。" spec={avgCreditSpec} rows={avgCreditRows} sourceRows={rows} height={340} {...cp("avg-credit-limit")}/></section>
     <section className="trend-section"><EvidenceChart id="avg-t0-credit-limit" queryId={q} title="T0提现申请客户人均授信额度" description="T0提现申请客户对应授信额度合计 / T0提现申请客户数。" spec={{type:"line",x:"label",y:"avgT0CreditLimit",yLabel:"人均授信额度（Rp）",valueDecimals:0}} rows={p.filter(x=>x.avgT0CreditLimit!=null)} sourceRows={rows} height={300} {...cp("avg-t0-credit-limit")}/></section>
