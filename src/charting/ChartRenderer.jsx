@@ -217,7 +217,8 @@ function layoutValueLabels(svg) {
     const ax = Number(label.dataset.ax), ay = Number(label.dataset.ay);
     const width = widths.get(label);
     const x = Math.max(width / 2 + 8, Math.min(right - width / 2 - 8, ax));
-    const offsets = Array.from({length:Number(label.dataset.recent) ? 10 : 3}, (_,i) => Number(label.dataset.series) % 2 ? [24+i*18,-18-i*18] : [-18-i*18,24+i*18]).flat();
+    const isRecent = Number(label.dataset.recent) === 1;
+    const offsets = Array.from({length:isRecent ? 18 : 3}, (_,i) => Number(label.dataset.series) % 2 ? [24+i*18,-18-i*18] : [-18-i*18,24+i*18]).flat();
     let placed = false;
     for (const offset of offsets) {
       const y = Math.max(18, Math.min(bottom - 38, ay + offset));
@@ -232,10 +233,18 @@ function layoutValueLabels(svg) {
       }
       occupied.push(box); placed = true; break;
     }
-    if (!placed) label.style.visibility = 'hidden';
+    if (!placed && isRecent) {
+      // The newest three points are intentionally always visible. If the
+      // collision pass cannot find a free slot, keep a readable fallback
+      // position rather than silently dropping the latest value.
+      const fallbackY = Math.max(18, Math.min(bottom - 38, ay + (Number(label.dataset.series) % 2 ? 24 : -18)));
+      label.setAttribute('x', x); label.setAttribute('y', fallbackY);
+      label.style.visibility = 'visible';
+      occupied.push({left:x-width/2-4,right:x+width/2+4,top:fallbackY-13,bottom:fallbackY+4});
+    } else if (!placed) label.style.visibility = 'hidden';
   }
 }
-function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 0, values = [], formatValue = compact }) {
+function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 0, values = [], formatValue = compact, hideSecondLatest = false }) {
   const labelRef = useRef(null);
   useEffect(() => {
     const svg = labelRef.current?.closest('svg');
@@ -244,8 +253,9 @@ function SparseValueLabel({ x, y, width = 0, value, index, count, seriesIndex = 
     pendingLabelLayouts.set(svg, requestAnimationFrame(() => { pendingLabelLayouts.delete(svg); layoutValueLabels(svg); }));
   });
   const validIndexes = values.flatMap((v,i) => v != null && v !== '' && Number.isFinite(Number(v)) ? [i] : []);
+  if (hideSecondLatest && index === validIndexes.at(-2)) return null;
   const recent = validIndexes.slice(-3).includes(index);
-  const interval = Math.max(1, Math.ceil(count / 12));
+  const interval = Math.max(1, Math.ceil(count / 18));
   if (!recent && index % interval !== 0) return null;
   if (value == null || value === '' || x == null || y == null || ![value,x,y].every(v => Number.isFinite(Number(v)))) return null;
   const formatted = formatValue(Number(value));
@@ -1350,7 +1360,7 @@ function StandardChartRenderer({
             isAnimationActive={false}
           >
             {spec.showValues && (lineFields.length <= 3 || field === primaryValueField) && (
-              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} seriesIndex={index} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} />} />
+              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} seriesIndex={index} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} hideSecondLatest={spec.hideSecondLatest === true} />} />
             )}
           </Line>
         ))}
@@ -1385,7 +1395,7 @@ function StandardChartRenderer({
             onClick={selectMark(field, data)}
           >
             {spec.showValues && field === primaryValueField && (
-              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} />} />
+              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} hideSecondLatest={spec.hideSecondLatest === true} />} />
             )}
           </Area>
         ))}

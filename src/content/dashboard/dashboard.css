@@ -41,3 +41,5 @@ main.page[data-data-app-content="dashboard"] {
 @media (max-width: 760px) { .monitor-hero { padding-top: 20px; } .monitor-hero h1 { font-size: 29px; } .metric-grid, .metric-grid--four, .chart-grid, .risk-number-grid { grid-template-columns: 1fr; } }
 .rate-chart-frame,.chart-frame{min-width:0;width:100%}
 .rate-chart-frame .recharts-line-dot{r:3.2px;stroke:var(--surface);stroke-width:1.2px}
+.dashboard-rate-tooltip b{display:flex;align-items:center;gap:6px;text-align:right}
+.dashboard-rate-tooltip small{color:var(--secondary);font-size:11px;font-weight:400;line-height:1.25;white-space:nowrap}
