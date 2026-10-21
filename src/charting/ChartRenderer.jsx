@@ -319,6 +319,7 @@ function StandardChartRenderer({
   getMarkActions,
   onSankeySelection,
   tooltipContent,
+  hideSecondLatest = false,
   fixedAxisWidths = false,
 }) {
   const { selectChartMark, selectChartSection, selectionEnabled } = useDashboardAsk();
@@ -1360,7 +1361,7 @@ function StandardChartRenderer({
             isAnimationActive={false}
           >
             {spec.showValues && (lineFields.length <= 3 || field === primaryValueField) && (
-              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} seriesIndex={index} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} hideSecondLatest={spec.hideSecondLatest === true} />} />
+              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} seriesIndex={index} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} hideSecondLatest={hideSecondLatest || spec.hideSecondLatest === true} />} />
             )}
           </Line>
         ))}
@@ -1395,7 +1396,7 @@ function StandardChartRenderer({
             onClick={selectMark(field, data)}
           >
             {spec.showValues && field === primaryValueField && (
-              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} hideSecondLatest={spec.hideSecondLatest === true} />} />
+              <LabelList dataKey={field} content={<SparseValueLabel count={data.length} values={data.map(row => row[field])} formatValue={value => formatMarkValue(value, field)} hideSecondLatest={hideSecondLatest || spec.hideSecondLatest === true} />} />
             )}
           </Area>
         ))}

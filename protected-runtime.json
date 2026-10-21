@@ -40,7 +40,7 @@
     "src/charting/ChartAnnotations.jsx": "bde17fa7757378681bcdc0f684c22a2f4e3b20ceb56b291f9a335cc374311bed",
     "src/charting/ChartFrame.jsx": "dee6f89d74f62de5365e56f87f50dde619af6da79b7ec11a143f09154267d856",
     "src/charting/ChartMark.jsx": "d38962a806aefa361729d082a1fdba271726e927623ade122cc72f0e85d42336",
-    "src/charting/ChartRenderer.jsx": "dcbe5887cb0a662c17812bd71cfd7c8ed929a06133911c3a84bc913113dc7f16",
+    "src/charting/ChartRenderer.jsx": "79cfb0aebbfe5914207d09a980dddc7d2f8272b0291d7fff9060d2612585c9ec",
     "src/charting/ChartState.jsx": "ad5b28521894d219e36027fcfc2640d0c0b8b290f55b4f6d1215ef2c9f2a7d46",
     "src/charting/ChartTooltip.jsx": "bd2a760fd3969341d231f5e8f6445b5e8884c6eccfac3c7781c84c96c4bd1ad4",
     "src/charting/FunnelRenderer.jsx": "0d9ee184f9e0217856233bf6bc405ae7ac107b6520eb81d3d7ec716160a8a8f0",
