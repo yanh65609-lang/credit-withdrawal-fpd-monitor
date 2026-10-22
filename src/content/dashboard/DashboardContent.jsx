@@ -86,7 +86,7 @@ function M({id,q,title,value,note,rows}){return <MetricCard variant="card" id={i
 function RateBreakdownTooltip({active,label,payload=[],sourceRows=[],overall=false,order=[]}){
   if(!active||!payload.length)return null;
   const rawItems=payload.filter(item=>item.value!=null&&item.dataKey!=="baseline");
-  const itemKey=item=>String(item.dataKey??item.name??"").replace(/^\d+_/i,"");
+  const itemKey=item=>{const row=item?.payload??{};return String(row.risk??row.segment??item.name??item.dataKey??"").replace(/^\d+_/i,"")};
   const fixedOrder=order?.length?order:fixedDimensionOrder(rawItems.map(itemKey));
   const ranks=new Map(fixedOrder.map((value,index)=>[String(value),index]));
   const items=[...rawItems].sort((a,b)=>(ranks.get(itemKey(a))??999)-(ranks.get(itemKey(b))??999)||itemKey(a).localeCompare(itemKey(b),undefined,{numeric:true}));
