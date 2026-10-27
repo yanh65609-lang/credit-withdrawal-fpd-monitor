@@ -44,20 +44,3 @@ main.page[data-data-app-content="dashboard"] {
 .rate-chart-frame .recharts-line-dot{r:3.2px;stroke:var(--surface);stroke-width:1.2px}
 .dashboard-rate-tooltip b{display:flex;align-items:center;gap:6px;text-align:right}
 .dashboard-rate-tooltip small{color:var(--secondary);font-size:11px;font-weight:400;line-height:1.25;white-space:nowrap}
-.linked-trend-group { position: relative; display: grid; gap: 10px; margin-top: 18px; }
-.linked-trend-group > .trend-section { margin-top: 0; }
-.linked-chart-pane { position: relative; min-width: 0; }
-.linked-crosshair { position: absolute; z-index: 4; width: 1px; background: color-mix(in srgb, var(--accent) 62%, transparent); border-left: 1px dashed color-mix(in srgb, var(--accent) 72%, transparent); pointer-events: none; }
-.linked-chart-detail { position: absolute; z-index: 5; width: min(300px, calc(100% - 28px)); transform: translateX(-50%); display: grid; gap: 4px; padding: 10px 12px; border: 1px solid #dce6e2; border-radius: 12px; background: color-mix(in srgb, var(--surface) 94%, white); box-shadow: 0 7px 22px rgba(35, 58, 48, .12); pointer-events: none; }
-.linked-chart-detail strong { color: #29463c; font-size: 13px; font-weight: 680; }
-.linked-chart-detail > small { margin-top: -2px; color: #6b7b74; font-size: 11px; }
-.linked-chart-detail span { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 6px; min-height: 19px; color: #465b53; font-size: 11px; }
-.linked-chart-detail span i { width: 8px; height: 8px; border-radius: 50%; background: var(--sync-color); }
-.linked-chart-detail span em { overflow: hidden; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
-.linked-chart-detail span b { display: flex; align-items: baseline; gap: 5px; color: #203d33; font-weight: 680; white-space: nowrap; }
-.linked-chart-detail span b small { color: #7d8b85; font-size: 10px; font-weight: 400; }
-.lightweight-more { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 24px 0 36px; padding: 14px 16px; color: #63736b; background: #f7faf8; border: 1px solid #dfe9e2; border-radius: 12px; font-size: 13px; }
-.lightweight-more p { margin: 0; }
-.lightweight-more button { appearance: none; color: #fff; background: #3f8f75; border: 1px solid #3f8f75; border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
-.lightweight-more button:hover { background: #327760; border-color: #327760; }
-@media (max-width: 620px) { .linked-chart-detail { width: min(260px, calc(100% - 18px)); } .linked-crosshair { border-left-style: solid; } }
