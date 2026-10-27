@@ -92,6 +92,16 @@ function RateBreakdownTooltip({active,label,payload=[],sourceRows=[],overall=fal
   const items=[...rawItems].sort((a,b)=>(ranks.get(itemKey(a))??999)-(ranks.get(itemKey(b))??999)||itemKey(a).localeCompare(itemKey(b),undefined,{numeric:true}));
   if(!items.length)return null;
   const normalizedLabel=String(label??"").replace(/\u2060/g,"");
+  if(active&&payload.length&&!globalThis.__compositionTooltipDebug){
+    globalThis.__compositionTooltipDebug=true;
+    console.info("composition-tooltip-debug",{
+      label,
+      normalizedLabel,
+      sourceRows:sourceRows.slice(0,3),
+      firstPayload:payload[0]?.payload,
+      firstName:itemKey(payload[0]),
+    });
+  }
   return <div className="chart-tooltip dashboard-rate-tooltip">
     {label!=null&&<strong>{String(label).replace(/\u2060/g,"")}</strong>}
     {items.map((item,index)=>{
