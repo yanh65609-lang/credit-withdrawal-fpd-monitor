@@ -109,7 +109,7 @@ function RateBreakdownTooltip({active,label,payload=[],sourceRows=[],overall=fal
     })}
   </div>;
 }
-function CompositionTooltip({active,label,payload=[],order=[]}){
+function CompositionTooltip({active,label,payload=[],order=[],sourceRows=[]}){
   if(!active||!payload.length)return null;
   const rawItems=payload.filter(item=>item.value!=null&&item.dataKey!=="baseline");
   const itemKey=item=>String(item?.payload?.segment??item?.name??item?.dataKey??"").replace(/^\d+_/i,"");
@@ -117,14 +117,15 @@ function CompositionTooltip({active,label,payload=[],order=[]}){
   const ranks=new Map(fixedOrder.map((value,index)=>[String(value),index]));
   const items=[...rawItems].sort((a,b)=>(ranks.get(itemKey(a))??999)-(ranks.get(itemKey(b))??999)||itemKey(a).localeCompare(itemKey(b),undefined,{numeric:true}));
   if(!items.length)return null;
+  const normalizedLabel=String(label??"").replace(/\u2060/g,"");
   return <div className="chart-tooltip dashboard-rate-tooltip">
     {label!=null&&<strong>{String(label).replace(/\u2060/g,"")}</strong>}
     {items.map((item,index)=>{
-      const row=item.payload??{},name=itemKey(item);
+      const row=item.payload??{},name=itemKey(item),source=sourceRows.find(candidate=>String(candidate.label??"").replace(/\u2060/g,"")===normalizedLabel&&String(candidate.segment??"").replace(/^\d+_/i,"")===name),count=row.count??source?.count,total=row.total??source?.total;
       return <span key={`${name}-${index}`}>
         <i style={{color:item.color??item.payload?.fill??"var(--chart-1)",background:item.color??item.payload?.fill??"var(--chart-1)"}}/>
         <span className="dashboard-rate-tooltip-label">{name}</span>
-        <b>{`${Number(item.value).toFixed(1)}%`}<small>{num(row.count)} / {num(row.total)}</small></b>
+        <b>{`${Number(item.value).toFixed(1)}%`}<small>{num(count)} / {num(total)}</small></b>
       </span>;
     })}
   </div>;
@@ -168,7 +169,7 @@ function Withdrawal({rows,grain,cp}){
   return <>
     <section className="metric-grid"><M id="credit" q={q} title="昨日通过量" value={num(latest?.credit_pass_customer_cnt)} note={sd(latest?.period)} rows={rows}/><M id="t0" q={q} title="T0提现申请率" value={pct(latest?.t0)} note={`申请人数 ${num(latest?.t0_withdraw_numerator)} / 授信通过人数 ${num(latest?.t0_withdraw_denominator)}`} rows={rows}/><M id="t0-loans" q={q} title="T0放款数" value={num(latest?.t0LoanCustomers)} note="关联昨日通过提现" rows={rows}/><M id="t7" q={q} title="T7提现申请率" value={pct(mature?.t7)} note={`最新成熟日 ${sd(mature?.period)}`} rows={rows}/><M id="util" q={q} title="T0额度使用率" value={pct(latest?.util)} note="申请金额 / 授信额度" rows={rows}/></section>
     <section className="trend-section"><TrendDimensionSelector value={trendDimension} onChange={value=>{cp("withdraw").onVisibleSeriesChange(undefined);setTrendDimension(value)}} options={trendOptions}/><EvidenceChart id="withdraw" queryId={q} title={trendDimension==="overall"?"T0 / T7提现申请率趋势":"各分组T0提现申请率趋势"} spec={trendSpec} rows={trendRows} sourceRows={rows} height={340} chartOptions={{tooltipContent:props=><RateBreakdownTooltip {...props} sourceRows={trendRows} overall={trendDimension==="overall"} order={trendDimension==="overall"?["T0 (%)","T7 (%)"]:trendOrder}/>}} wrapperClassName={trendDimension==="overall"?"withdraw-rate-trend":""} {...cp("withdraw")}/></section>
-    <section className="trend-section"><EvidenceChart id="credit-pass-composition" queryId={q} title={trendDimension==="overall"?"授信通过人数渠道结构":`各${dimensionLabels[compositionDimension]??"分组"}授信通过人数结构`} description={`与上方T0申请率使用相同统计粒度；每期合计100%，悬浮查看各${dimensionLabels[compositionDimension]??"分组"}人数、占比及总通过人数。`} spec={compositionSpec} rows={compositionRows} sourceRows={rows} height={320} chartOptions={{tooltipContent:props=><CompositionTooltip {...props} order={compositionOrder}/>}} {...cp("credit-pass-composition")}/></section>
+    <section className="trend-section"><EvidenceChart id="credit-pass-composition" queryId={q} title={trendDimension==="overall"?"授信通过人数渠道结构":`各${dimensionLabels[compositionDimension]??"分组"}授信通过人数结构`} description={`与上方T0申请率使用相同统计粒度；每期合计100%，悬浮查看各${dimensionLabels[compositionDimension]??"分组"}人数、占比及总通过人数。`} spec={compositionSpec} rows={compositionRows} sourceRows={rows} height={320} chartOptions={{tooltipContent:props=><CompositionTooltip {...props} sourceRows={compositionRows} order={compositionOrder}/>}} {...cp("credit-pass-composition")}/></section>
     <section className="trend-section"><TrendDimensionSelector value={utilDimension} onChange={value=>{cp("util-trend").onVisibleSeriesChange(undefined);setUtilDimension(value)}} options={trendOptions}/><EvidenceChart id="util-trend" queryId={q} title={utilDimension==="overall"?"T0额度使用率趋势":"各分组T0额度使用率趋势"} spec={utilSpec} rows={utilRows} sourceRows={rows} height={340} {...cp("util-trend")}/></section>
     <section className="trend-section"><TrendDimensionSelector value={avgCreditDimension} onChange={value=>{cp("avg-credit-limit").onVisibleSeriesChange(undefined);setAvgCreditDimension(value)}} options={trendOptions}/><EvidenceChart id="avg-credit-limit" queryId={q} title={avgCreditDimension==="overall"?"授信通过客户人均授信额度":"各分组授信通过客户人均授信额度趋势"} description="授信通过额度合计 / 授信通过客户数。" spec={avgCreditSpec} rows={avgCreditRows} sourceRows={rows} height={340} {...cp("avg-credit-limit")}/></section>
     <section className="trend-section"><EvidenceChart id="avg-t0-credit-limit" queryId={q} title="T0提现申请客户人均授信额度" description="T0提现申请客户对应授信额度合计 / T0提现申请客户数。" spec={{type:"line",x:"label",y:"avgT0CreditLimit",yLabel:"人均授信额度（Rp）",valueDecimals:0}} rows={p.filter(x=>x.avgT0CreditLimit!=null)} sourceRows={rows} height={300} {...cp("avg-t0-credit-limit")}/></section>
