@@ -109,9 +109,37 @@ function RateBreakdownTooltip({active,label,payload=[],sourceRows=[],overall=fal
     })}
   </div>;
 }
+function CompositionTooltip({active,label,payload=[],order=[]}){
+  if(!active||!payload.length)return null;
+  const rawItems=payload.filter(item=>item.value!=null&&item.dataKey!=="baseline");
+  const itemKey=item=>String(item?.payload?.segment??item?.name??item?.dataKey??"").replace(/^\d+_/i,"");
+  const fixedOrder=order?.length?order:fixedDimensionOrder(rawItems.map(itemKey));
+  const ranks=new Map(fixedOrder.map((value,index)=>[String(value),index]));
+  const items=[...rawItems].sort((a,b)=>(ranks.get(itemKey(a))??999)-(ranks.get(itemKey(b))??999)||itemKey(a).localeCompare(itemKey(b),undefined,{numeric:true}));
+  if(!items.length)return null;
+  return <div className="chart-tooltip dashboard-rate-tooltip">
+    {label!=null&&<strong>{String(label).replace(/\u2060/g,"")}</strong>}
+    {items.map((item,index)=>{
+      const row=item.payload??{},name=itemKey(item);
+      return <span key={`${name}-${index}`}>
+        <i style={{color:item.color??item.payload?.fill??"var(--chart-1)",background:item.color??item.payload?.fill??"var(--chart-1)"}}/>
+        <span className="dashboard-rate-tooltip-label">{name}</span>
+        <b>{`${Number(item.value).toFixed(1)}%`}<small>{num(row.count)} / {num(row.total)}</small></b>
+      </span>;
+    })}
+  </div>;
+}
 function TrendDimensionSelector({value,onChange,options}){return <div className="trend-dimension-selector" role="group" aria-label="趋势拆分维度">{options.map(option=><button key={option.value} type="button" className={value===option.value?"is-active":""} aria-pressed={value===option.value} onClick={()=>onChange(option.value)}>{option.label}</button>)}</div>}
 function productGroup(code){if(productOrder.includes(code))return code;if(["CL_01","CL_06"].includes(code))return"等本";if(code==="CL_07")return"小等本";if(["CL_03","CL_04","CL_05"].includes(code))return"灵活产品";if(code==="CL_08")return"营销产品";return"其他产品"}
 function dimensionValue(row,dim){return row[dim]}
+function creditPassComposition(rows,grain,dim){return groups(rows,grain).flatMap(([d,a])=>{
+  const total=sum(a,"credit_pass_customer_cnt");
+  return [...new Set(a.map(r=>dimensionValue(r,dim)).filter(v=>v!=null&&String(v).trim()!==""))].map(value=>{
+    const count=sum(a.filter(r=>dimensionValue(r,dim)===value),"credit_pass_customer_cnt");
+    return{label:cd(d),segment:String(value).replace(/^\d+_/,""),share:ratio(count,total)??0,count,total};
+  }).filter(x=>x.count>0);
+})}
+const dimensionLabels={platform:"平台",media:"媒体",original_product:"原始产品",product:"产品",app_version:"App版本",risk_level:"RG",credit_limit_bucket:"授信额度桶"};
 function segmentedTrend(rows,grain,dim,summarize,metric){return groups(rows,grain).flatMap(([d,a])=>[...new Set(a.map(r=>dimensionValue(r,dim)).filter(v=>v!=null&&String(v).trim()!==""))].map(value=>{const x=summarize(a.filter(r=>dimensionValue(r,dim)===value)),t0=metric==="t0";return{label:cd(d),segment:String(value).replace(/^\d+_/,""),rate:x[metric],numerator:t0?x.t0_withdraw_numerator:x.fpd0_numerator,den:t0?x.t0_withdraw_denominator:x.fpd0_denominator}}).filter(x=>x.rate!=null&&x.den>0))}
 function segmentedMetric(rows,grain,dim,summarize,metric,valueField="rate"){return groups(rows,grain).flatMap(([d,a])=>[...new Set(a.map(r=>dimensionValue(r,dim)).filter(v=>v!=null&&String(v).trim()!==""))].map(value=>{const metricValue=summarize(a.filter(r=>dimensionValue(r,dim)===value))[metric];return{label:cd(d),segment:String(value).replace(/^\d+_/,""),[valueField]:metricValue}}).filter(x=>x[valueField]!=null))}
 function riskShares(rows,grain,field,days=30){const last=[...new Set(rows.map(r=>r.credit_pass_date))].sort().at(-1),d=new Date(`${last}T00:00:00Z`);d.setUTCDate(d.getUTCDate()-days+1);const recent=rows.filter(r=>r.credit_pass_date>=d.toISOString().slice(0,10)),risks=[...new Set(recent.map(r=>r.risk_level))].sort();return{risks,rows:groups(recent,grain).flatMap(([p,a])=>{const total=sum(a,field);return risks.map(risk=>({label:cd(p),risk,share:ratio(sum(a.filter(r=>r.risk_level===risk),field),total)??0}))})}}
@@ -126,6 +154,7 @@ function Withdrawal({rows,grain,cp}){
   const trendOrder=orderFor(trendDimension);
   const trendRows=trendDimension==="overall"?p.map(row=>({...row,"T0 (%)":row.t0,"T7 (%)":row.t7})):segmentedTrend(rows,grain,trendDimension,ws,"t0");
   const trendSpec=trendDimension==="overall"?{type:"line",x:"label",y:"T0 (%)",fields:["T0 (%)","T7 (%)"],yLabel:"提现申请率",showValues:true,legend:{labels:{"T0 (%)":"T0提现申请率","T7 (%)":"T7提现申请率"}}}:{type:"line",x:"label",y:"rate",series:"segment",yLabel:"T0提现申请率",showValues:true,tooltipOrder:trendOrder};
+  const compositionDimension=trendDimension==="overall"?"media":trendDimension,compositionOrder=orderFor(compositionDimension),compositionRows=creditPassComposition(rows,grain,compositionDimension),compositionValues=[...new Set(compositionRows.map(row=>row.segment))],compositionSpec={type:"stackedBar100",x:"label",y:"share",series:"segment",yLabel:"授信通过人数占比",showValues:false,tooltipOrder:compositionOrder,legend:{labels:Object.fromEntries(compositionValues.map(value=>[value,value]))}};
   const utilRows=utilDimension==="overall"?p:segmentedMetric(rows,grain,utilDimension,ws,"util"),utilSpec=utilDimension==="overall"?{type:"line",x:"label",y:"util",yLabel:"额度使用率"}:{type:"line",x:"label",y:"rate",series:"segment",yLabel:"T0额度使用率",showValues:true,tooltipOrder:orderFor(utilDimension)};
   const avgCreditRows=avgCreditDimension==="overall"?p.filter(x=>x.avgCreditLimit!=null):segmentedMetric(rows,grain,avgCreditDimension,ws,"avgCreditLimit","value"),avgCreditSpec=avgCreditDimension==="overall"?{type:"line",x:"label",y:"avgCreditLimit",yLabel:"人均授信额度（Rp）",valueDecimals:0}:{type:"line",x:"label",y:"value",series:"segment",yLabel:"人均授信额度（Rp）",valueDecimals:0,showValues:true,tooltipOrder:orderFor(avgCreditDimension)};
   const avgLoanRows=avgLoanDimension==="overall"?p.filter(x=>x.avgT0LoanAmount!=null):segmentedMetric(rows,grain,avgLoanDimension,ws,"avgT0LoanAmount","value"),avgLoanSpec=avgLoanDimension==="overall"?{type:"line",x:"label",y:"avgT0LoanAmount",yLabel:"人均放款金额（Rp）",valueDecimals:0}:{type:"line",x:"label",y:"value",series:"segment",yLabel:"人均放款金额（Rp）",valueDecimals:0,showValues:true,tooltipOrder:orderFor(avgLoanDimension)};
@@ -139,6 +168,7 @@ function Withdrawal({rows,grain,cp}){
   return <>
     <section className="metric-grid"><M id="credit" q={q} title="昨日通过量" value={num(latest?.credit_pass_customer_cnt)} note={sd(latest?.period)} rows={rows}/><M id="t0" q={q} title="T0提现申请率" value={pct(latest?.t0)} note={`申请人数 ${num(latest?.t0_withdraw_numerator)} / 授信通过人数 ${num(latest?.t0_withdraw_denominator)}`} rows={rows}/><M id="t0-loans" q={q} title="T0放款数" value={num(latest?.t0LoanCustomers)} note="关联昨日通过提现" rows={rows}/><M id="t7" q={q} title="T7提现申请率" value={pct(mature?.t7)} note={`最新成熟日 ${sd(mature?.period)}`} rows={rows}/><M id="util" q={q} title="T0额度使用率" value={pct(latest?.util)} note="申请金额 / 授信额度" rows={rows}/></section>
     <section className="trend-section"><TrendDimensionSelector value={trendDimension} onChange={value=>{cp("withdraw").onVisibleSeriesChange(undefined);setTrendDimension(value)}} options={trendOptions}/><EvidenceChart id="withdraw" queryId={q} title={trendDimension==="overall"?"T0 / T7提现申请率趋势":"各分组T0提现申请率趋势"} spec={trendSpec} rows={trendRows} sourceRows={rows} height={340} chartOptions={{tooltipContent:props=><RateBreakdownTooltip {...props} sourceRows={trendRows} overall={trendDimension==="overall"} order={trendDimension==="overall"?["T0 (%)","T7 (%)"]:trendOrder}/>}} wrapperClassName={trendDimension==="overall"?"withdraw-rate-trend":""} {...cp("withdraw")}/></section>
+    <section className="trend-section"><EvidenceChart id="credit-pass-composition" queryId={q} title={trendDimension==="overall"?"授信通过人数渠道结构":`各${dimensionLabels[compositionDimension]??"分组"}授信通过人数结构`} description={`与上方T0申请率使用相同统计粒度；每期合计100%，悬浮查看各${dimensionLabels[compositionDimension]??"分组"}人数、占比及总通过人数。`} spec={compositionSpec} rows={compositionRows} sourceRows={rows} height={320} chartOptions={{tooltipContent:props=><CompositionTooltip {...props} order={compositionOrder}/>}} {...cp("credit-pass-composition")}/></section>
     <section className="trend-section"><TrendDimensionSelector value={utilDimension} onChange={value=>{cp("util-trend").onVisibleSeriesChange(undefined);setUtilDimension(value)}} options={trendOptions}/><EvidenceChart id="util-trend" queryId={q} title={utilDimension==="overall"?"T0额度使用率趋势":"各分组T0额度使用率趋势"} spec={utilSpec} rows={utilRows} sourceRows={rows} height={340} {...cp("util-trend")}/></section>
     <section className="trend-section"><TrendDimensionSelector value={avgCreditDimension} onChange={value=>{cp("avg-credit-limit").onVisibleSeriesChange(undefined);setAvgCreditDimension(value)}} options={trendOptions}/><EvidenceChart id="avg-credit-limit" queryId={q} title={avgCreditDimension==="overall"?"授信通过客户人均授信额度":"各分组授信通过客户人均授信额度趋势"} description="授信通过额度合计 / 授信通过客户数。" spec={avgCreditSpec} rows={avgCreditRows} sourceRows={rows} height={340} {...cp("avg-credit-limit")}/></section>
     <section className="trend-section"><EvidenceChart id="avg-t0-credit-limit" queryId={q} title="T0提现申请客户人均授信额度" description="T0提现申请客户对应授信额度合计 / T0提现申请客户数。" spec={{type:"line",x:"label",y:"avgT0CreditLimit",yLabel:"人均授信额度（Rp）",valueDecimals:0}} rows={p.filter(x=>x.avgT0CreditLimit!=null)} sourceRows={rows} height={300} {...cp("avg-t0-credit-limit")}/></section>
