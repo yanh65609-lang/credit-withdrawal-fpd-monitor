@@ -5,7 +5,7 @@ import {fixedDimensionOrder} from "./dimension-order.js";
 const tabs=[{id:"withdrawal",label:"01_T0/T7提现率"},{id:"fpd",label:"02_提现订单及FPD"}],baseFilterIds=["credit_pass_date","original_product","product","app_version","credit_type","risk_level","platform","media"];
 const riskOrder=["RG0","RG1","RG2","RG3","RG4","RG5","RG6","RG7"],creditLimitOrder=["200万及以上","180万","150万","120万","100万","80万","60万","50万","40万","30万"];
 const platformOrder=["Android","iOS","未知"],mediaOrder=["ASA","Facebook","Google","Organic","Tiktok","其他","空值"],originalProductOrder=["CL_01","CL_03","CL_04","CL_05","CL_06","CL_07","CL_08"],productOrder=["等本","小等本","灵活产品","营销产品","其他产品"],loanTypeOrder=["首借","复借"],utilizationOrder=["100%以下","100%及以上","额度缺失"];
-const sum=(a,f)=>a.reduce((n,r)=>n+Number(r[f]||0),0),ratio=(n,d)=>d?n/d:null,pct=v=>v==null?"—":`${(v*100).toFixed(1)}%`,num=v=>v==null?"—":Math.round(v).toLocaleString("en-US");
+const sum=(a,f)=>a.reduce((n,r)=>n+Number(r[f]||0),0),ratio=(n,d)=>d?n/d:null,pct=v=>v==null?"—":`${(v*100).toFixed(1)}%`,num=v=>v==null?"—":Math.round(v).toLocaleString("en-US"),wan=v=>v==null?"—":`${(Number(v)/10000).toFixed(1)}w`;
 const sd=v=>/^\d{4}-\d{2}-\d{2}$/.test(v??"")?`${v.slice(5,7)}/${v.slice(8,10)}`:v,cd=v=>`${sd(v)}\u2060`;
 function week(d){const x=new Date(`${d}T00:00:00Z`);x.setUTCDate(x.getUTCDate()-((x.getUTCDay()+2)%7));return x.toISOString().slice(0,10)}
 function groups(rows,grain){const m=new Map();rows.forEach(r=>{const p=grain==="week"?week(r.credit_pass_date):r.credit_pass_date,a=m.get(p)??[];a.push(r);m.set(p,a)});return[...m].sort(([a],[b])=>a.localeCompare(b))}
@@ -104,7 +104,7 @@ function RateBreakdownTooltip({active,label,payload=[],sourceRows=[],overall=fal
       return <span key={`${name}-${index}`}>
         <i style={{color:item.color??item.payload?.fill??"var(--chart-1)",background:item.color??item.payload?.fill??"var(--chart-1)"}}/>
         <span className="dashboard-rate-tooltip-label">{name}</span>
-        <b>{`${Number(item.value).toFixed(1)}%`}{numerator!=null&&denominator!=null&&<small>{num(numerator)}/{num(denominator)}</small>}</b>
+        <b>{`${Number(item.value).toFixed(1)}%`}{numerator!=null&&denominator!=null&&<small>{metric?.numerator==="fpd0_amt_numerator"?`${wan(numerator)} / ${wan(denominator)}`:`${num(numerator)}/${num(denominator)}`}</small>}</b>
       </span>;
     })}
   </div>;
