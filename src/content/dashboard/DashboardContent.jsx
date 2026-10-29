@@ -5,7 +5,20 @@ import {fixedDimensionOrder} from "./dimension-order.js";
 const tabs=[{id:"withdrawal",label:"01_T0/T7提现率"},{id:"fpd",label:"02_提现订单及FPD"}],baseFilterIds=["credit_pass_date","original_product","product","app_version","credit_type","risk_level","platform","media"];
 const riskOrder=["RG0","RG1","RG2","RG3","RG4","RG5","RG6","RG7"],creditLimitOrder=["200万及以上","180万","150万","120万","100万","80万","60万","50万","40万","30万"];
 const platformOrder=["Android","iOS","未知"],mediaOrder=["ASA","Facebook","Google","Organic","Tiktok","其他","空值"],originalProductOrder=["CL_01","CL_03","CL_04","CL_05","CL_06","CL_07","CL_08"],productOrder=["等本","小等本","灵活产品","营销产品","其他产品"],loanTypeOrder=["首借","复借"],utilizationOrder=["100%以下","100%及以上","额度缺失"];
-const mediaColors={ASA:"#f2afa3",Facebook:"#1296db",Google:"#e87500",Organic:"#61c998",Tiktok:"#979500",其他:"#9ecbe5",空值:"#e6c8dc"};
+const stablePalette=["#1296db","#e87500","#61c998","#979500","#8b7cf6","#e35d8f","#4f78d1","#42a383","#d7a441","#bd7fa3","#6ea6c8","#527f73","#ef6a5b","#7b8da8","#9c6ade","#2f9c95","#c47a38","#5e8c45","#b85c76","#6f6f9f","#58a6a6","#a66c3f","#7c8f3b","#8d6b94"];
+const namedColors={
+  "T0提现申请率":"#00a0bf","T7提现申请率":"#d78700","t0Rate (%)":"#00a0bf","t7Rate (%)":"#d78700",
+  FPD0:"#00a0bf",FPD10:"#d78700","fpd0Rate (%)":"#00a0bf","fpd10Rate (%)":"#d78700","fpd0AmountRate (%)":"#00a0bf","fpd10AmountRate (%)":"#d78700",
+  Android:"#1296db",iOS:"#e35d8f",未知:"#9aa3ad",UNKNOWN:"#9aa3ad",
+  ASA:"#f2afa3",Facebook:"#1296db",Google:"#e87500",Organic:"#61c998",Tiktok:"#979500",其他:"#9ecbe5",空值:"#e6c8dc",
+  RG0:"#7185ff",RG1:"#ef6955",RG2:"#00a88f",RG3:"#e45d87",RG4:"#00a0bf",RG5:"#cf57a5",RG6:"#d7a441",RG7:"#7b8da8",
+  CL_01:"#1296db",CL_03:"#e87500",CL_04:"#61c998",CL_05:"#e35d8f",CL_06:"#8b7cf6",CL_07:"#979500",CL_08:"#6ea6c8",
+  等本:"#1296db",小等本:"#e87500",灵活产品:"#61c998",营销产品:"#e35d8f",其他产品:"#9aa3ad",
+  首借:"#1296db",复借:"#e87500",
+  "200万及以上":"#527f73","180万":"#6ea6c8","150万":"#8f8f8f","120万":"#fa423e","100万":"#bd7fa3","80万":"#d7a441","60万":"#8390ad","50万":"#9ab7c7","40万":"#75b39f","30万":"#42a383","其他额度":"#9aa3ad",
+  "100%以下":"#d78700","100%及以上":"#00a0bf",额度缺失:"#9aa3ad","1.2.9":"#d32f2f"
+};
+function stableColor(value){const text=String(value??"");let hash=2166136261;for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619)}return stablePalette[(hash>>>0)%stablePalette.length]}
 const sum=(a,f)=>a.reduce((n,r)=>n+Number(r[f]||0),0),ratio=(n,d)=>d?n/d:null,pct=v=>v==null?"—":`${(v*100).toFixed(1)}%`,num=v=>v==null?"—":Math.round(v).toLocaleString("en-US"),wan=v=>v==null?"—":`${(Number(v)/10000).toFixed(1)}w`;
 const sd=v=>/^\d{4}-\d{2}-\d{2}$/.test(v??"")?`${v.slice(5,7)}/${v.slice(8,10)}`:v,cd=v=>`${sd(v)}\u2060`;
 function week(d){const x=new Date(`${d}T00:00:00Z`);x.setUTCDate(x.getUTCDate()-((x.getUTCDay()+2)%7));return x.toISOString().slice(0,10)}
@@ -51,7 +64,9 @@ function EvidenceChart({spec,rows,wrapperClassName="",...props}){
   const seriesCount=spec?.series?new Set(mappedRows.map(row=>row[spec.series])).size:(spec?.fields?.length??1);
   const showValues=spec?.showValues??(spec?.type==="line"&&seriesCount<=8);
   const isRateChart=rateFields.some(field=>displayField(field).endsWith(" (%)"));
-  const mappedSpec={...spec,tooltipSort:"dimension",tooltipOrder:dimensionOrder,colors:{...mediaColors,...spec?.colors,"1.2.9":"#d32f2f"},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,legend:{...spec.legend,labels:legendLabels}};
+  const colorKeys=[...dimensionOrder,...rateFields.map(displayField)];
+  const fixedColors=Object.fromEntries(colorKeys.map(value=>[value,namedColors[value]??stableColor(value)]));
+  const mappedSpec={...spec,tooltipSort:"dimension",tooltipOrder:dimensionOrder,colors:{...fixedColors,...spec?.colors},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,legend:{...spec.legend,labels:legendLabels}};
   const frameRef=useRef(null);
   useEffect(()=>{
     if(!isRateChart||!frameRef.current)return;
