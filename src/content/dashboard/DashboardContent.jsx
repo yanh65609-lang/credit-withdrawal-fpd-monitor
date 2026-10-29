@@ -5,6 +5,7 @@ import {fixedDimensionOrder} from "./dimension-order.js";
 const tabs=[{id:"withdrawal",label:"01_T0/T7提现率"},{id:"fpd",label:"02_提现订单及FPD"}],baseFilterIds=["credit_pass_date","original_product","product","app_version","credit_type","risk_level","platform","media"];
 const riskOrder=["RG0","RG1","RG2","RG3","RG4","RG5","RG6","RG7"],creditLimitOrder=["200万及以上","180万","150万","120万","100万","80万","60万","50万","40万","30万"];
 const platformOrder=["Android","iOS","未知"],mediaOrder=["ASA","Facebook","Google","Organic","Tiktok","其他","空值"],originalProductOrder=["CL_01","CL_03","CL_04","CL_05","CL_06","CL_07","CL_08"],productOrder=["等本","小等本","灵活产品","营销产品","其他产品"],loanTypeOrder=["首借","复借"],utilizationOrder=["100%以下","100%及以上","额度缺失"];
+const mediaColors={ASA:"#f2afa3",Facebook:"#1296db",Google:"#e87500",Organic:"#61c998",Tiktok:"#979500",其他:"#9ecbe5",空值:"#e6c8dc"};
 const sum=(a,f)=>a.reduce((n,r)=>n+Number(r[f]||0),0),ratio=(n,d)=>d?n/d:null,pct=v=>v==null?"—":`${(v*100).toFixed(1)}%`,num=v=>v==null?"—":Math.round(v).toLocaleString("en-US"),wan=v=>v==null?"—":`${(Number(v)/10000).toFixed(1)}w`;
 const sd=v=>/^\d{4}-\d{2}-\d{2}$/.test(v??"")?`${v.slice(5,7)}/${v.slice(8,10)}`:v,cd=v=>`${sd(v)}\u2060`;
 function week(d){const x=new Date(`${d}T00:00:00Z`);x.setUTCDate(x.getUTCDate()-((x.getUTCDay()+2)%7));return x.toISOString().slice(0,10)}
@@ -50,7 +51,7 @@ function EvidenceChart({spec,rows,wrapperClassName="",...props}){
   const seriesCount=spec?.series?new Set(mappedRows.map(row=>row[spec.series])).size:(spec?.fields?.length??1);
   const showValues=spec?.showValues??(spec?.type==="line"&&seriesCount<=8);
   const isRateChart=rateFields.some(field=>displayField(field).endsWith(" (%)"));
-  const mappedSpec={...spec,tooltipSort:"dimension",tooltipOrder:dimensionOrder,colors:{...spec?.colors,"1.2.9":"#d32f2f"},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,legend:{...spec.legend,labels:legendLabels}};
+  const mappedSpec={...spec,tooltipSort:"dimension",tooltipOrder:dimensionOrder,colors:{...mediaColors,...spec?.colors,"1.2.9":"#d32f2f"},y:displayField(spec?.y),...(spec?.fields?{fields:spec.fields.map(displayField)}:{}),valueDecimals:1,valueSuffix:isRateChart?"%":spec?.valueSuffix,showValues,legend:{...spec.legend,labels:legendLabels}};
   const frameRef=useRef(null);
   useEffect(()=>{
     if(!isRateChart||!frameRef.current)return;
