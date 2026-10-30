@@ -7,7 +7,7 @@ const riskOrder=["RG0","RG1","RG2","RG3","RG4","RG5","RG6","RG7"],creditLimitOrd
 const platformOrder=["Android","iOS","未知"],mediaOrder=["ASA","Facebook","Google","Organic","Tiktok","其他","空值"],originalProductOrder=["CL_01","CL_03","CL_04","CL_05","CL_06","CL_07","CL_08"],productOrder=["等本","小等本","灵活产品","营销产品","其他产品"],loanTypeOrder=["首借","复借"],utilizationOrder=["100%以下","100%及以上","额度缺失"];
 const stablePalette=["#1296db","#e87500","#61c998","#979500","#8b7cf6","#e35d8f","#4f78d1","#42a383","#d7a441","#bd7fa3","#6ea6c8","#527f73","#ef6a5b","#7b8da8","#9c6ade","#2f9c95","#c47a38","#5e8c45","#b85c76","#6f6f9f","#58a6a6","#a66c3f","#7c8f3b","#8d6b94"];
 const namedColors={
-  "T0提现申请率":"#00a0bf","T7提现申请率":"#d78700","t0Rate (%)":"#00a0bf","t7Rate (%)":"#d78700",
+  "T0提现申请率":"#00a0bf","T7提现申请率":"#d78700","T0 (%)":"#00a0bf","T7 (%)":"#d78700","t0Rate (%)":"#00a0bf","t7Rate (%)":"#d78700",
   FPD0:"#00a0bf",FPD10:"#d78700","fpd0Rate (%)":"#00a0bf","fpd10Rate (%)":"#d78700","fpd0AmountRate (%)":"#00a0bf","fpd10AmountRate (%)":"#d78700",
   Android:"#1296db",iOS:"#e35d8f",未知:"#9aa3ad",UNKNOWN:"#9aa3ad",
   ASA:"#f2afa3",Facebook:"#1296db",Google:"#e87500",Organic:"#61c998",Tiktok:"#979500",其他:"#9ecbe5",空值:"#e6c8dc",
