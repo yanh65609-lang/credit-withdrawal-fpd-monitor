@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 const withdrawalInput='C:/Users/yanhan/Documents/Codex/2026-08-25/cek-penarikan-x20/withdrawal-fpd-dashboard/data/withdrawal.csv',fpdInput='C:/Users/yanhan/Documents/Codex/2026-08-25/cek-penarikan-x20/withdrawal-fpd-dashboard/data/fpd.csv';
-const defaultDashboardEndDate='2026-10-31';
 const output=new URL('../withdrawal-fpd-snapshot.json',import.meta.url),appOutput=new URL('../src/data.json',import.meta.url);
 function parseLine(line){const cells=[];let value='',quoted=false;for(let i=0;i<line.length;i+=1){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){value+='"';i+=1;}else quoted=!quoted;}else if(c===','&&!quoted){cells.push(value);value='';}else value+=c;}cells.push(value);return cells;}
 function readCsv(file){const [header,...lines]=fs.readFileSync(file,'utf8').trim().split(/\r?\n/),fields=parseLine(header);const numeric=new Set(fields.filter(f=>f.endsWith('_cnt')||f.endsWith('_numerator')||f.endsWith('_denominator')||f.endsWith('_sum')));return lines.filter(Boolean).map(line=>{const values=parseLine(line);return Object.fromEntries(fields.map((field,i)=>[field,numeric.has(field)?Number(values[i]||0):(values[i]??'')]))});}
@@ -13,14 +12,13 @@ const fpdRows=readCsv(fpdInput).filter(row=>['01_首笔放款','首借'].include
   credit_pass_date:row.loan_date
 })).sort((a,b)=>String(a.loan_date).localeCompare(String(b.loan_date)));
 const dates=[...withdrawalRows.map(r=>r.credit_pass_date),...fpdRows.map(r=>r.loan_date)].sort();
-const defaultEndDate=dates.includes(defaultDashboardEndDate)?defaultDashboardEndDate:dates.at(-1);
 const products=[...new Set([...withdrawalRows,...fpdRows].map(r=>r.product).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
 const originalProducts=[...new Set([...withdrawalRows,...fpdRows].map(r=>r.original_product).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
 const risks=[...new Set([...withdrawalRows,...fpdRows].map(r=>r.risk_level).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
 const appVersions=[...new Set([...withdrawalRows,...fpdRows].map(r=>r.app_version).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true}));
 const filterRows=Array.from({length:Math.max(originalProducts.length,products.length,appVersions.length,risks.length)},(_,i)=>({original_product:originalProducts[i]??'',product:products[i]??'',app_version:appVersions[i]??'',risk_level:risks[i]??''}));
 const snapshot={id:'credit-withdrawal-fpd-monitor-clear-defaults-v1',surface:'dashboard',title:'授信后提现与FPD监控',generatedAt:new Date().toISOString(),status:'reviewed',buildStatus:'complete',filters:[
-  {id:'credit_pass_date',label:'日期范围',field:'credit_pass_date',mode:'through',defaultValue:`${dates[0]}..${defaultEndDate}`},
+  {id:'credit_pass_date',label:'日期范围',field:'credit_pass_date',mode:'through',defaultValue:`${dates[0]}..${dates.at(-1)}`},
   {id:'original_product',label:'原始产品',field:'original_product',multiple:true,defaultValue:[]},
   {id:'product',label:'产品',field:'product',multiple:true,defaultValue:[]},{id:'risk_level',label:'风险等级',field:'risk_level',multiple:true,defaultValue:[]},
   {id:'credit_type',label:'授信类型',field:'credit_type',multiple:true,defaultValue:[]},{id:'platform',label:'手机系统',field:'platform',multiple:true,defaultValue:[]},{id:'app_version',label:'App版本',field:'app_version',multiple:true,defaultValue:[]},
