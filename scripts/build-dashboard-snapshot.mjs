@@ -6,7 +6,7 @@ function parseLine(line){const cells=[];let value='',quoted=false;for(let i=0;i<
 function readCsv(file){const [header,...lines]=fs.readFileSync(file,'utf8').trim().split(/\r?\n/),fields=parseLine(header);const numeric=new Set(fields.filter(f=>f.endsWith('_cnt')||f.endsWith('_numerator')||f.endsWith('_denominator')||f.endsWith('_sum')));return lines.filter(Boolean).map(line=>{const values=parseLine(line);return Object.fromEntries(fields.map((field,i)=>[field,numeric.has(field)?Number(values[i]||0):(values[i]??'')]))});}
 function productGroup(code){if(['CL_01','CL_06'].includes(code))return'等本';if(code==='CL_07')return'小等本';if(['CL_03','CL_04','CL_05'].includes(code))return'灵活产品';if(code==='CL_08')return'营销产品';return'其他产品';}
 const withdrawalRows=readCsv(withdrawalInput).filter(row=>row.credit_pass_date<=dashboardEndDate).map(row=>({...row,original_product:row.product,product:productGroup(row.product)})).sort((a,b)=>String(a.credit_pass_date).localeCompare(String(b.credit_pass_date)));
-const fpdRows=readCsv(fpdInput).filter(row=>row.loan_date<=dashboardEndDate).map(row=>({...row,
+const fpdRows=readCsv(fpdInput).filter(row=>row.loan_date<=dashboardEndDate&&['01_首笔放款','首借'].includes(row.loan_type)).map(row=>({...row,
   loan_type:row.loan_type==='01_首笔放款'?'首借':row.loan_type==='02_非首笔放款'?'复借':row.loan_type,
   original_product:row.product,
   product:productGroup(row.product),
