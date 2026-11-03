@@ -22,6 +22,11 @@ WITH params AS (
 ), credit_base AS (
     SELECT id,user_id,credit_pass_time,credit_pass_date,credit_limit,credit_type,risk_level,product
     FROM credit_ranked WHERE rn=1
+), user_reg AS (
+    SELECT u.id AS user_id,MIN(u.created_time)::DATE AS reg_date
+    FROM ods.ods_t_user_info_mif u
+    JOIN (SELECT DISTINCT user_id FROM credit_base) b ON b.user_id=u.id
+    GROUP BY u.id
 ), app_version_ranked AS (
     SELECT cb.id,NULLIF(TRIM(rc.app_version),'') AS app_version,
            ROW_NUMBER() OVER(PARTITION BY cb.id ORDER BY rc.created_time DESC,rc.id DESC) AS rn
@@ -67,6 +72,9 @@ WITH params AS (
 ), detail AS (
     SELECT cb.credit_pass_date,cb.user_id,cb.credit_type,cb.risk_level,cb.product,cb.app_version,
            COALESCE(pd.platform,'未知') AS platform,COALESCE(md.media,'空值') AS media,
+           CASE WHEN ur.reg_date IS NULL THEN '03_注册日期缺失'
+                WHEN ur.reg_date=cb.credit_pass_date THEN '01_是'
+                ELSE '02_否' END AS is_t0_registration,
            CASE WHEN cb.credit_limit IS NULL OR cb.credit_limit=0 THEN '00_无额度/异常'
                 WHEN cb.credit_limit=300000 THEN '01_30万' WHEN cb.credit_limit=400000 THEN '02_40万'
                 WHEN cb.credit_limit=500000 THEN '03_50万' WHEN cb.credit_limit=600000 THEN '04_60万'
@@ -91,12 +99,13 @@ WITH params AS (
     LEFT JOIN payment_order_base po ON po.order_id::TEXT=fw.order_id::TEXT
     LEFT JOIN media_dim md ON md.user_id=cb.user_id
     LEFT JOIN platform_dim pd ON pd.user_id=cb.user_id
+    LEFT JOIN user_reg ur ON ur.user_id=cb.user_id
 )
-SELECT credit_pass_date,credit_type,risk_level,product,app_version,platform,media,credit_limit_bucket,t0_utilization_bucket,
+SELECT credit_pass_date,credit_type,risk_level,product,app_version,platform,media,is_t0_registration,credit_limit_bucket,t0_utilization_bucket,
        COUNT(*) AS credit_pass_customer_cnt,SUM(t0_num) AS t0_withdraw_numerator,COUNT(*) AS t0_withdraw_denominator,
        SUM(t7_num) AS t7_withdraw_numerator,SUM(t7_den) AS t7_withdraw_denominator,
        SUM(util_num) AS t0_withdraw_utilization_numerator,SUM(util_den) AS t0_withdraw_utilization_denominator,
        SUM(t0_loan_amt) AS t0_loan_amt_sum,SUM(t0_loan_customer_num) AS t0_loan_customer_cnt,
        SUM(credit_limit_amt) AS credit_pass_limit_amt_sum
 FROM detail
-GROUP BY credit_pass_date,credit_type,risk_level,product,app_version,platform,media,credit_limit_bucket,t0_utilization_bucket;
+GROUP BY credit_pass_date,credit_type,risk_level,product,app_version,platform,media,is_t0_registration,credit_limit_bucket,t0_utilization_bucket;
