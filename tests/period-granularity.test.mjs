@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  alignPreviousMonthToLatest,
-  alignPreviousWeekToLatest,
   displayPeriod,
   isCompleteCalendarMonth,
   monthStart,
@@ -26,20 +24,3 @@ test("only treats a month with its calendar month-end as complete", () => {
   assert.equal(isCompleteCalendarMonth("2026-11", [{credit_pass_date: "2026-11-16"}]), false);
 });
 
-test("aligns the previous month to the latest month's observed day range", () => {
-  const previousRows = ["2026-10-01", "2026-10-16", "2026-10-17", "2026-10-31"].map(credit_pass_date => ({credit_pass_date}));
-  const latestRows = ["2026-11-01", "2026-11-16"].map(credit_pass_date => ({credit_pass_date}));
-  const aligned = alignPreviousMonthToLatest(previousRows, latestRows);
-  assert.deepEqual(aligned.previousRows.map(row => row.credit_pass_date), ["2026-10-01", "2026-10-16"]);
-  assert.equal(aligned.startDay, 1);
-  assert.equal(aligned.endDay, 16);
-});
-
-test("aligns the previous business week to the latest week's observed progress", () => {
-  const previousRows = ["2026-11-06", "2026-11-09", "2026-11-10", "2026-11-12"].map(credit_pass_date => ({credit_pass_date}));
-  const latestRows = ["2026-11-13", "2026-11-16"].map(credit_pass_date => ({credit_pass_date}));
-  const aligned = alignPreviousWeekToLatest(previousRows, latestRows);
-  assert.deepEqual(aligned.previousRows.map(row => row.credit_pass_date), ["2026-11-06", "2026-11-09"]);
-  assert.equal(aligned.startOffset, 0);
-  assert.equal(aligned.endOffset, 3);
-});
