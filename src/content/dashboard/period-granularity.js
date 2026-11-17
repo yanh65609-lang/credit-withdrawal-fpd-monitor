@@ -45,3 +45,24 @@ export function alignPreviousMonthToLatest(previousRows, latestRows, dateField =
     endDay,
   };
 }
+
+export function alignPreviousWeekToLatest(previousRows, latestRows, dateField = "credit_pass_date") {
+  const offsetFromWeekStart = row => {
+    const date = String(row[dateField] ?? "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NaN;
+    return Math.round((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${weekStart(date)}T00:00:00Z`)) / 86400000);
+  };
+  const latestOffsets = latestRows.map(offsetFromWeekStart).filter(Number.isFinite);
+  if (!latestOffsets.length) return { previousRows: [], latestRows, startOffset: null, endOffset: null };
+  const startOffset = Math.min(...latestOffsets);
+  const endOffset = Math.max(...latestOffsets);
+  return {
+    previousRows: previousRows.filter(row => {
+      const offset = offsetFromWeekStart(row);
+      return Number.isFinite(offset) && offset >= startOffset && offset <= endOffset;
+    }),
+    latestRows,
+    startOffset,
+    endOffset,
+  };
+}

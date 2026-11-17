@@ -2,7 +2,7 @@ import React,{useEffect,useMemo,useRef,useState} from "react";
 import {EvidenceChart as BaseEvidenceChart,Filters as BaseFilters,MetricCard,SegmentedControl,SectionHeader,useDataApp,useDashboardTabs} from "../../data-app-public.jsx";
 import "./dashboard.css";
 import {fixedDimensionOrder} from "./dimension-order.js";
-import {alignPreviousMonthToLatest,displayPeriod,periodKey} from "./period-granularity.js";
+import {alignPreviousMonthToLatest,alignPreviousWeekToLatest,displayPeriod,periodKey} from "./period-granularity.js";
 const tabs=[{id:"withdrawal",label:"01_T0/T7提现率"},{id:"fpd",label:"02_提现订单及FPD"}],baseFilterIds=["credit_pass_date","original_product","product","app_version","credit_type","risk_level","platform","media"];
 const riskOrder=["RG0","RG1","RG2","RG3","RG4","RG5","RG6","RG7"],creditLimitOrder=["200万及以上","180万","150万","120万","100万","80万","60万","50万","40万","30万"];
 const platformOrder=["Android","iOS","未知"],mediaOrder=["ASA","Facebook","Google","Organic","Tiktok","其他","空值"],originalProductOrder=["CL_01","CL_03","CL_04","CL_05","CL_06","CL_07","CL_08"],productOrder=["等本","小等本","灵活产品","营销产品","其他产品"],loanTypeOrder=["首借","复借"],utilizationOrder=["100%以下","100%及以上","额度缺失"];
@@ -172,14 +172,13 @@ function analyzeT0Dimension(previousRows,latestRows,dimension,previousTotal,late
 }
 function t0Attribution(rows,grain){
   const grouped=groups(rows,grain);
-  let comparable=grain==="week"?grouped.filter(([,periodRows])=>new Set(periodRows.map(row=>row.credit_pass_date)).size===7):grouped;
-  let monthRange=null;
-  if(grain==="month"){
-    const [previousMonth,latestMonth]=grouped.slice(-2);
-    if(previousMonth&&latestMonth){
-      const aligned=alignPreviousMonthToLatest(previousMonth[1],latestMonth[1]);
-      comparable=[[previousMonth[0],aligned.previousRows],[latestMonth[0],aligned.latestRows]];
-      monthRange={startDay:aligned.startDay,endDay:aligned.endDay};
+  let comparable=grouped,periodRange=null;
+  if(grain==="week"||grain==="month"){
+    const [previousPeriod,latestPeriod]=grouped.slice(-2);
+    if(previousPeriod&&latestPeriod){
+      const aligned=grain==="week"?alignPreviousWeekToLatest(previousPeriod[1],latestPeriod[1]):alignPreviousMonthToLatest(previousPeriod[1],latestPeriod[1]);
+      comparable=[[previousPeriod[0],aligned.previousRows],[latestPeriod[0],aligned.latestRows]];
+      periodRange=grain==="week"?{startOffset:aligned.startOffset,endOffset:aligned.endOffset}:{startDay:aligned.startDay,endDay:aligned.endDay};
     }else comparable=[];
   }
   const [previousEntry,latestEntry]=comparable.slice(-2),previousDate=previousEntry?.[0],latestDate=latestEntry?.[0];
@@ -197,24 +196,26 @@ function t0Attribution(rows,grain){
     const drillCandidates=drillDimensions.flatMap(dimension=>{const analysis=analyzeT0Dimension(priorSubset,latestSubset,dimension,priorSummary.t0_withdraw_denominator,latestSummary.t0_withdraw_denominator);return analysis.categories.length>1&&analysis.dominantShare<.95?analysis.categories.filter(item=>item.averageShare>=.1&&item.previousDenominator+item.latestDenominator>=12).map(item=>({...item,dimension})):[]});
     drill=[...drillCandidates].sort((a,b)=>b.score-a.score||Math.abs(b.within)-Math.abs(a.within))[0]??null;
   }
-  return{latestDate,previousDate,previous,latest,change:(latest.t0??0)-(previous.t0??0),structure,primary,drill,monthRange};
+  return{latestDate,previousDate,previous,latest,change:(latest.t0??0)-(previous.t0??0),structure,primary,drill,periodRange};
 }
 const pp=value=>`${value>=0?"+":""}${(value*100).toFixed(1)}pp`;
-function attributionPeriodLabel(value,grain,monthRange){
+function attributionPeriodLabel(value,grain,periodRange){
   if(grain==="month"){
-    if(!monthRange?.endDay)return sd(value);
-    return monthRange.startDay===1?`${sd(value)}（截至${monthRange.endDay}日）`:`${sd(value)}（${monthRange.startDay}–${monthRange.endDay}日）`;
+    if(!periodRange?.endDay)return sd(value);
+    return periodRange.startDay===1?`${sd(value)}（截至${periodRange.endDay}日）`:`${sd(value)}（${periodRange.startDay}–${periodRange.endDay}日）`;
   }
   if(grain!=="week")return sd(value);
-  const end=new Date(`${value}T00:00:00Z`);end.setUTCDate(end.getUTCDate()+6);
-  return `${sd(value)}–${sd(end.toISOString().slice(0,10))}`;
+  const start=new Date(`${value}T00:00:00Z`),end=new Date(`${value}T00:00:00Z`);
+  start.setUTCDate(start.getUTCDate()+(periodRange?.startOffset??0));
+  end.setUTCDate(end.getUTCDate()+(periodRange?.endOffset??6));
+  return `${sd(start.toISOString().slice(0,10))}–${sd(end.toISOString().slice(0,10))}`;
 }
 function DailyAttribution({rows,grain}){
   const result=useMemo(()=>t0Attribution(rows,grain),[rows,grain]);
   if(!result)return null;
-  const {latestDate,previousDate,previous,latest,change,structure,primary,drill,monthRange}=result,structureLead=structure?.categories.filter(item=>!structure.mix||Math.sign(item.mix)===Math.sign(structure.mix)).sort((a,b)=>Math.abs(b.mix)-Math.abs(a.mix))[0],direction=change<0?"下降":"上升",periodName=grain==="week"?"每周":grain==="month"?"每月":"每日",coverageName=grain==="week"?"当周":grain==="month"?"当月":"当日";
+  const {latestDate,previousDate,previous,latest,change,structure,primary,drill,periodRange}=result,structureLead=structure?.categories.filter(item=>!structure.mix||Math.sign(item.mix)===Math.sign(structure.mix)).sort((a,b)=>Math.abs(b.mix)-Math.abs(a.mix))[0],direction=change<0?"下降":"上升",periodName=grain==="week"?"每周":grain==="month"?"每月":"每日",coverageName=grain==="week"?"当周":grain==="month"?"当月":"当日";
   return <section className="daily-attribution" aria-label={`${periodName}T0提现率波动归因`}>
-    <div className="daily-attribution-head"><div><span>{periodName}波动归因</span><strong>{attributionPeriodLabel(latestDate,grain,monthRange)} T0提现申请率 {pct(latest.t0)}</strong></div><b className={change<0?"is-negative":"is-positive"}>较{attributionPeriodLabel(previousDate,grain,monthRange)} {direction} {Math.abs(change*100).toFixed(1)}个百分点</b></div>
+    <div className="daily-attribution-head"><div><span>{periodName}波动归因</span><strong>{attributionPeriodLabel(latestDate,grain,periodRange)} T0提现申请率 {pct(latest.t0)}</strong></div><b className={change<0?"is-negative":"is-positive"}>较{attributionPeriodLabel(previousDate,grain,periodRange)} {direction} {Math.abs(change*100).toFixed(1)}个百分点</b></div>
     <div className="daily-attribution-grid">
       <article><span>整体变化</span><strong>{num(previous.t0_withdraw_numerator)}/{num(previous.t0_withdraw_denominator)} → {num(latest.t0_withdraw_numerator)}/{num(latest.t0_withdraw_denominator)}</strong><p>申请人数 {num(previous.t0_withdraw_numerator)} → {num(latest.t0_withdraw_numerator)}（{latest.t0_withdraw_numerator-previous.t0_withdraw_numerator>=0?"+":""}{num(latest.t0_withdraw_numerator-previous.t0_withdraw_numerator)}），授信人数 {num(previous.t0_withdraw_denominator)} → {num(latest.t0_withdraw_denominator)}</p></article>
       <article><span>结构影响</span><strong>{structure?`${dimensionLabels[structure.dimension]??structure.dimension} ${pp(structure.mix)}`:"结构基本稳定"}</strong><p>{structureLead?`${structureLead.label}占比 ${(structureLead.previousShare*100).toFixed(1)}% → ${(structureLead.latestShare*100).toFixed(1)}%，结构贡献 ${pp(structureLead.mix)}`:"当前筛选下无可比结构"}</p></article>
