@@ -60,8 +60,16 @@ function ChartDataTable({rows,spec,title}){
   const model=useMemo(()=>chartTableModel(rows,spec),[rows,spec]);
   const [copied,setCopied]=useState(false);
   const copy=async()=>{try{await copyText(chartTableTsv(model));setCopied(true);setTimeout(()=>setCopied(false),1600)}catch{setCopied(false)}};
+  const heatSpan=(value,row,field)=>{
+    const raw=row.__rawValues?.[field];
+    if(raw==null||!Number.isFinite(Number(raw)))return value;
+    const spread=Number(model.heatMax)-Number(model.heatMin);
+    const intensity=spread>0?Math.max(0,Math.min(1,(Number(raw)-Number(model.heatMin))/spread)):.5;
+    return <span className="pivot-heat-cell" style={{"--pivot-heat":intensity}}>{value}</span>;
+  };
+  const columns=model.columns.map(({field,label,heat})=>({field,label,...(heat?{renderCell:(value,row)=>heatSpan(value,row,field)}:{})}));
   return <div className="chart-table-panel">
-    <DataTable rows={model.displayRows} columns={model.columns.map(({field,label})=>({field,label}))} rowKey="__rowKey" caption={`${title}表格`} searchable={model.displayRows.length>8} compactNumbers={false} toolbarControls={<button type="button" className="chart-table-copy-button" onClick={copy}>{copied?"已复制":"复制表格"}</button>}/>
+    <DataTable rows={model.displayRows} columns={columns} rowKey="__rowKey" caption={`${title}表格`} searchable={model.displayRows.length>8} compactNumbers={false} toolbarControls={<button type="button" className="chart-table-copy-button" onClick={copy}>{copied?"已复制":"复制表格"}</button>}/>
   </div>;
 }
 function EvidenceChart({spec,rows,wrapperClassName="",headerControls,renderPlot,...props}){

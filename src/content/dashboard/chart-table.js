@@ -74,10 +74,83 @@ function percentValue(value) {
   return number;
 }
 
+function formatMetricValue(value, percent = false) {
+  if (value == null || value === "") return "--";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return cleanText(value);
+  if (!percent) return numeric;
+  const percentage = percentValue(numeric);
+  return percentage == null ? "--" : `${percentage.toFixed(2)}%`;
+}
+
+function orderedSeriesValues(rows, series, tooltipOrder = []) {
+  const values = unique(rows.map(row => cleanText(row[series])));
+  const firstSeen = new Map(values.map((value, index) => [value, index]));
+  const preferred = new Map(tooltipOrder.map((value, index) => [cleanText(value), index]));
+  return values.sort((left, right) =>
+    (preferred.get(left) ?? Number.MAX_SAFE_INTEGER) - (preferred.get(right) ?? Number.MAX_SAFE_INTEGER)
+    || (firstSeen.get(left) ?? 0) - (firstSeen.get(right) ?? 0));
+}
+
+function pivotChartTableModel(rows, spec, x, series, measure) {
+  const seriesValues = orderedSeriesValues(rows, series, spec.tooltipOrder ?? []);
+  const periodValues = unique(rows.map(row => cleanText(row[x]))).reverse();
+  const percent = isPercentField(measure, spec, [measure]);
+  const categoryFields = new Map(seriesValues.map((value, index) => [value, `__series_${index}`]));
+  const valuesByPeriod = new Map(periodValues.map(period => [period, new Map()]));
+  const heatValues = [];
+
+  for (const row of rows) {
+    const period = cleanText(row[x]);
+    const category = cleanText(row[series]);
+    if (!valuesByPeriod.has(period) || !categoryFields.has(category)) continue;
+    const numeric = Number(row[measure]);
+    const raw = Number.isFinite(numeric) ? numeric : null;
+    valuesByPeriod.get(period).set(category, row[measure]);
+    if (raw != null) heatValues.push(raw);
+  }
+
+  const columns = [
+    { field: x, label: fieldLabel(x, spec, [measure]), percent: false },
+    ...seriesValues.map(value => ({
+      field: categoryFields.get(value),
+      label: spec?.legend?.labels?.[value] ?? value,
+      percent,
+      heat: true,
+    })),
+  ];
+  const displayRows = periodValues.map(period => {
+    const periodValuesMap = valuesByPeriod.get(period);
+    const rawValues = {};
+    const entries = seriesValues.map(category => {
+      const field = categoryFields.get(category);
+      const raw = periodValuesMap.get(category);
+      const numeric = Number(raw);
+      rawValues[field] = Number.isFinite(numeric) ? numeric : null;
+      return [field, formatMetricValue(raw, percent)];
+    });
+    return Object.fromEntries([
+      ["__rowKey", period],
+      ["__rawValues", rawValues],
+      [x, period || "--"],
+      ...entries,
+    ]);
+  });
+
+  return {
+    columns,
+    displayRows,
+    pivot: true,
+    heatMin: heatValues.length ? Math.min(...heatValues) : null,
+    heatMax: heatValues.length ? Math.max(...heatValues) : null,
+  };
+}
+
 export function chartTableModel(rows = [], spec = {}) {
   const x = spec.x ?? "label";
   const series = spec.series;
   const measures = unique(spec.fields?.length ? spec.fields : [spec.y]);
+  if (series && measures.length) return pivotChartTableModel(rows, spec, x, series, measures[0]);
   const supplements = relatedSupplementFields(measures, rows, series);
   const fields = unique([x, series, ...measures, ...supplements]);
   const periodOrder = unique(rows.map(row => cleanText(row[x])));
@@ -94,14 +167,7 @@ export function chartTableModel(rows = [], spec = {}) {
     ...columns.map(column => {
       const value = row[column.field];
       if (column.field === x || column.field === series) return [column.field, cleanText(value) || "--"];
-      if (value == null || value === "") return [column.field, "--"];
-      const numeric = Number(value);
-      if (!Number.isFinite(numeric)) return [column.field, cleanText(value)];
-      if (column.percent) {
-        const percentage = percentValue(numeric);
-        return [column.field, percentage == null ? "--" : `${percentage.toFixed(2)}%`];
-      }
-      return [column.field, numeric];
+      return [column.field, formatMetricValue(value, column.percent)];
     }),
   ]));
   return { columns, displayRows };

@@ -65,6 +65,7 @@ main.page[data-data-app-content="dashboard"] {
 .chart-table-panel .table{min-width:100%}
 .chart-table-panel .table th,.chart-table-panel .table td{white-space:nowrap}
 .chart-table-panel .table td{user-select:text}
+.chart-table-panel .pivot-heat-cell{display:flex;align-items:center;justify-content:flex-end;min-height:34px;margin:-9px -12px;padding:9px 12px;background:rgba(42,139,223,calc(.10 + var(--pivot-heat)*.42));color:#173d61;font-variant-numeric:tabular-nums;font-weight:600}
 .chart-table-copy-button{appearance:none;border:1px solid #cfd9d3;border-radius:8px;background:#fff;color:#356856;padding:6px 11px;font:inherit;font-size:12px;font-weight:600;line-height:1;cursor:pointer;transition:border-color .16s ease,background .16s ease}
 .chart-table-copy-button:hover{border-color:#78a794;background:#f3f8f5}
 @media (max-width:760px){.chart-view-header-controls{width:100%;justify-content:flex-end}.chart-table-panel .table-wrap{max-height:360px}}

@@ -20,12 +20,15 @@ test("wide rate charts expose period, measures, and additive numerators", () => 
   assert.equal(model.displayRows[0].label, "11/13–11/16");
 });
 
-test("long charts retain the selected group and denominator", () => {
+test("long charts pivot the selected group into columns", () => {
   const model = chartTableModel([
     { label: "2026/11\u2060", segment: "Android", "segmentRate (%)": 52.345, numerator: 523, den: 999 },
+    { label: "2026/11\u2060", segment: "iOS", "segmentRate (%)": 49.1, numerator: 491, den: 999 },
   ], { type: "line", x: "label", y: "segmentRate (%)", series: "segment", yLabel: "T0提现申请率" });
-  assert.deepEqual(model.columns.map(column => column.label), ["统计周期", "分组", "T0提现申请率", "分子", "分母"]);
-  assert.equal(model.displayRows[0]["segmentRate (%)"], "52.34%");
+  assert.deepEqual(model.columns.map(column => column.label), ["统计周期", "Android", "iOS"]);
+  assert.equal(model.displayRows[0].__series_0, "52.34%");
+  assert.equal(model.displayRows[0].__series_1, "49.10%");
+  assert.equal(model.pivot, true);
 });
 
 test("small percentage values stay in 0–100 chart units", () => {
@@ -35,16 +38,28 @@ test("small percentage values stay in 0–100 chart units", () => {
   assert.equal(model.displayRows[0]["fpd0Rate (%)"], "0.50%");
 });
 
-test("table periods are newest first while series order stays stable", () => {
+test("pivot tables put newest periods first and respect the requested column order", () => {
   const model = chartTableModel([
     { label: "10/30\u2060", segment: "Android", "segmentRate (%)": 51 },
     { label: "10/30\u2060", segment: "iOS", "segmentRate (%)": 49 },
     { label: "11/06\u2060", segment: "Android", "segmentRate (%)": 52 },
     { label: "11/06\u2060", segment: "iOS", "segmentRate (%)": 50 },
-  ], { type: "line", x: "label", y: "segmentRate (%)", series: "segment", yLabel: "提现申请率" });
-  assert.deepEqual(model.displayRows.map(row => `${row.label}-${row.segment}`), [
-    "11/06-Android", "11/06-iOS", "10/30-Android", "10/30-iOS",
+  ], { type: "line", x: "label", y: "segmentRate (%)", series: "segment", yLabel: "提现申请率", tooltipOrder: ["iOS", "Android"] });
+  assert.deepEqual(model.columns.map(column => column.label), ["统计周期", "iOS", "Android"]);
+  assert.deepEqual(model.displayRows.map(row => row.label), ["11/06", "10/30"]);
+  assert.deepEqual(model.displayRows.map(row => [row.__series_0, row.__series_1]), [
+    ["50.00%", "52.00%"], ["49.00%", "51.00%"],
   ]);
+});
+
+test("pivot tables support numeric distributions without percent formatting", () => {
+  const model = chartTableModel([
+    { label: "11/06\u2060", risk: "A", count: 123 },
+    { label: "11/06\u2060", risk: "B", count: 456 },
+  ], { type: "bar", x: "label", y: "count", series: "risk", yLabel: "客户人数" });
+  assert.deepEqual(model.columns.map(column => column.label), ["统计周期", "A", "B"]);
+  assert.deepEqual([model.displayRows[0].__series_0, model.displayRows[0].__series_1], [123, 456]);
+  assert.equal(model.heatMax, 456);
 });
 
 test("100 percent composition tables keep every visible series and copy as TSV", () => {
