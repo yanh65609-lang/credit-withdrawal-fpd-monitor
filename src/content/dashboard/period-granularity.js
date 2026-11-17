@@ -27,3 +27,21 @@ export function isCompleteCalendarMonth(period, rows, dateField = "credit_pass_d
     .slice(0, 10);
   return rows.some(row => row[dateField] === lastDay);
 }
+
+export function alignPreviousMonthToLatest(previousRows, latestRows, dateField = "credit_pass_date") {
+  const latestDays = latestRows
+    .map(row => Number(String(row[dateField] ?? "").slice(8, 10)))
+    .filter(Number.isFinite);
+  if (!latestDays.length) return { previousRows: [], latestRows, startDay: null, endDay: null };
+  const startDay = Math.min(...latestDays);
+  const endDay = Math.max(...latestDays);
+  return {
+    previousRows: previousRows.filter(row => {
+      const day = Number(String(row[dateField] ?? "").slice(8, 10));
+      return Number.isFinite(day) && day >= startDay && day <= endDay;
+    }),
+    latestRows,
+    startDay,
+    endDay,
+  };
+}

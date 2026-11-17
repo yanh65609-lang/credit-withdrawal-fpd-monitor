@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  alignPreviousMonthToLatest,
   displayPeriod,
   isCompleteCalendarMonth,
   monthStart,
@@ -22,4 +23,13 @@ test("groups calendar months from the first day of the month", () => {
 test("only treats a month with its calendar month-end as complete", () => {
   assert.equal(isCompleteCalendarMonth("2026-10", [{credit_pass_date: "2026-10-31"}]), true);
   assert.equal(isCompleteCalendarMonth("2026-11", [{credit_pass_date: "2026-11-16"}]), false);
+});
+
+test("aligns the previous month to the latest month's observed day range", () => {
+  const previousRows = ["2026-10-01", "2026-10-16", "2026-10-17", "2026-10-31"].map(credit_pass_date => ({credit_pass_date}));
+  const latestRows = ["2026-11-01", "2026-11-16"].map(credit_pass_date => ({credit_pass_date}));
+  const aligned = alignPreviousMonthToLatest(previousRows, latestRows);
+  assert.deepEqual(aligned.previousRows.map(row => row.credit_pass_date), ["2026-10-01", "2026-10-16"]);
+  assert.equal(aligned.startDay, 1);
+  assert.equal(aligned.endDay, 16);
 });
