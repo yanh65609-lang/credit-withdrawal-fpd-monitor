@@ -116,7 +116,7 @@ function pivotChartTableModel(rows, spec, x, series, measure) {
       field: categoryFields.get(value),
       label: spec?.legend?.labels?.[value] ?? value,
       percent,
-      heat: true,
+      highlight: true,
     })),
   ];
   const displayRows = periodValues.map(period => {
@@ -141,8 +141,8 @@ function pivotChartTableModel(rows, spec, x, series, measure) {
     columns,
     displayRows,
     pivot: true,
-    heatMin: heatValues.length ? Math.min(...heatValues) : null,
-    heatMax: heatValues.length ? Math.max(...heatValues) : null,
+    valueMin: heatValues.length ? Math.min(...heatValues) : null,
+    valueMax: heatValues.length ? Math.max(...heatValues) : null,
   };
 }
 

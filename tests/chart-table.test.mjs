@@ -59,7 +59,8 @@ test("pivot tables support numeric distributions without percent formatting", ()
   ], { type: "bar", x: "label", y: "count", series: "risk", yLabel: "客户人数" });
   assert.deepEqual(model.columns.map(column => column.label), ["统计周期", "A", "B"]);
   assert.deepEqual([model.displayRows[0].__series_0, model.displayRows[0].__series_1], [123, 456]);
-  assert.equal(model.heatMax, 456);
+  assert.equal(model.valueMax, 456);
+  assert.equal(model.columns[1].highlight, true);
 });
 
 test("100 percent composition tables keep every visible series and copy as TSV", () => {

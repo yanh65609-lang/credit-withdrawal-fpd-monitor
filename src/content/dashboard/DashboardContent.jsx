@@ -60,15 +60,17 @@ function ChartDataTable({rows,spec,title}){
   const model=useMemo(()=>chartTableModel(rows,spec),[rows,spec]);
   const [copied,setCopied]=useState(false);
   const copy=async()=>{try{await copyText(chartTableTsv(model));setCopied(true);setTimeout(()=>setCopied(false),1600)}catch{setCopied(false)}};
-  const heatSpan=(value,row,field)=>{
+  const matrixSpan=(value,row,field)=>{
     const raw=row.__rawValues?.[field];
-    if(raw==null||!Number.isFinite(Number(raw)))return value;
-    const spread=Number(model.heatMax)-Number(model.heatMin);
-    const intensity=spread>0?Math.max(0,Math.min(1,(Number(raw)-Number(model.heatMin))/spread)):.5;
-    return <span className="pivot-heat-cell" style={{"--pivot-heat":intensity}}>{value}</span>;
+    const values=Object.values(row.__rawValues??{}).filter(item=>item!=null&&item!=="").map(Number).filter(Number.isFinite);
+    if(raw==null||!Number.isFinite(Number(raw))||values.length<2)return <span className="pivot-matrix-cell">{value}</span>;
+    const min=Math.min(...values),max=Math.max(...values),spread=max-min;
+    const isHigh=spread>0&&Number(raw)===max;
+    const isLow=spread>0&&values.length>=3&&Number(raw)===min;
+    return <span className={`pivot-matrix-cell${isHigh?" pivot-matrix-cell--high":isLow?" pivot-matrix-cell--low":""}`}>{value}</span>;
   };
-  const columns=model.columns.map(({field,label,heat})=>({field,label,...(heat?{renderCell:(value,row)=>heatSpan(value,row,field)}:{})}));
-  return <div className="chart-table-panel">
+  const columns=model.columns.map(({field,label,highlight})=>({field,label,...(highlight?{renderCell:(value,row)=>matrixSpan(value,row,field)}:{})}));
+  return <div className={`chart-table-panel${model.pivot?" chart-table-panel--pivot":""}`} style={model.pivot?{"--pivot-min-width":`${96+Math.max(0,model.columns.length-1)*108}px`}:undefined}>
     <DataTable rows={model.displayRows} columns={columns} rowKey="__rowKey" caption={`${title}表格`} searchable={model.displayRows.length>8} compactNumbers={false} toolbarControls={<button type="button" className="chart-table-copy-button" onClick={copy}>{copied?"已复制":"复制表格"}</button>}/>
   </div>;
 }

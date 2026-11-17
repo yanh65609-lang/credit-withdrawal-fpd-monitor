@@ -61,11 +61,17 @@ main.page[data-data-app-content="dashboard"] {
 .dashboard-rate-tooltip small{color:var(--secondary);font-size:11px;font-weight:400;line-height:1.25;white-space:nowrap}
 .chart-view-header-controls{display:flex;align-items:center;gap:8px}
 .chart-table-panel{min-width:0;padding-top:2px;user-select:text}
-.chart-table-panel .table-wrap{max-height:390px;border:1px solid color-mix(in srgb,var(--border) 88%,transparent);border-radius:10px}
+.chart-table-panel .table-wrap{max-height:390px;border:1px solid color-mix(in srgb,var(--border) 88%,transparent);border-radius:10px;mask-image:none!important;scrollbar-gutter:stable}
 .chart-table-panel .table{min-width:100%}
 .chart-table-panel .table th,.chart-table-panel .table td{white-space:nowrap}
 .chart-table-panel .table td{user-select:text}
-.chart-table-panel .pivot-heat-cell{display:flex;align-items:center;justify-content:flex-end;min-height:34px;margin:-9px -12px;padding:9px 12px;background:rgba(42,139,223,calc(.10 + var(--pivot-heat)*.42));color:#173d61;font-variant-numeric:tabular-nums;font-weight:600}
+.chart-table-panel--pivot .table{min-width:max(100%,var(--pivot-min-width));table-layout:fixed}
+.chart-table-panel--pivot .table :is(th,td):first-child{position:sticky;z-index:2;left:0;width:96px;min-width:96px;max-width:96px;padding-inline:10px;background:var(--surface);box-shadow:1px 0 0 color-mix(in srgb,var(--border) 85%,transparent)}
+.chart-table-panel--pivot .table th:first-child{z-index:3}
+.chart-table-panel--pivot .table :is(th,td):not(:first-child){width:108px;padding-inline:8px}
+.chart-table-panel .pivot-matrix-cell{display:flex;align-items:center;justify-content:flex-end;min-height:34px;margin:-9px -8px;padding:9px 8px;font-variant-numeric:tabular-nums}
+.chart-table-panel .pivot-matrix-cell--high{background:color-mix(in srgb,#168d7a 14%,var(--surface));color:#176b5e;font-weight:650;box-shadow:inset 3px 0 #49a997}
+.chart-table-panel .pivot-matrix-cell--low{background:color-mix(in srgb,#d58b3e 12%,var(--surface));color:#875720;font-weight:600;box-shadow:inset 3px 0 #e2aa6e}
 .chart-table-copy-button{appearance:none;border:1px solid #cfd9d3;border-radius:8px;background:#fff;color:#356856;padding:6px 11px;font:inherit;font-size:12px;font-weight:600;line-height:1;cursor:pointer;transition:border-color .16s ease,background .16s ease}
 .chart-table-copy-button:hover{border-color:#78a794;background:#f3f8f5}
 @media (max-width:760px){.chart-view-header-controls{width:100%;justify-content:flex-end}.chart-table-panel .table-wrap{max-height:360px}}
