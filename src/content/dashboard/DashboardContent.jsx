@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useRef,useState} from "react";
-import {EvidenceChart as BaseEvidenceChart,Filters as BaseFilters,MetricCard,SegmentedControl,SectionHeader,useDataApp,useDashboardTabs} from "../../data-app-public.jsx";
+import {DataTable,EvidenceChart as BaseEvidenceChart,Filters as BaseFilters,MetricCard,SegmentedControl,SectionHeader,useDataApp,useDashboardTabs} from "../../data-app-public.jsx";
 import "./dashboard.css";
+import {chartTableModel,chartTableTsv} from "./chart-table.js";
 import {fixedDimensionOrder} from "./dimension-order.js";
 import {displayPeriod,isCompleteCalendarMonth,periodKey} from "./period-granularity.js";
 const tabs=[{id:"withdrawal",label:"01_T0/T7提现率"},{id:"fpd",label:"02_提现订单及FPD"}],baseFilterIds=["credit_pass_date","original_product","product","app_version","credit_type","risk_level","platform","media"];
@@ -49,7 +50,22 @@ function Filters(props){
   const scopedFilters=useMemo(()=>filters.map(filter=>["original_product","risk_level","app_version"].includes(filter.id)?{...filter,queryIds:[`date_options_${filter.id}`]}:filter),[filters]);
   return <BaseFilters {...props} queries={productQueries} filters={scopedFilters}/>;
 }
-function EvidenceChart({spec,rows,wrapperClassName="",...props}){
+function copyText(text){
+  if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);
+  const textarea=document.createElement("textarea");
+  textarea.value=text;textarea.style.position="fixed";textarea.style.opacity="0";document.body.appendChild(textarea);textarea.select();
+  try{document.execCommand("copy");return Promise.resolve()}finally{textarea.remove()}
+}
+function ChartDataTable({rows,spec,title}){
+  const model=useMemo(()=>chartTableModel(rows,spec),[rows,spec]);
+  const [copied,setCopied]=useState(false);
+  const copy=async()=>{try{await copyText(chartTableTsv(model));setCopied(true);setTimeout(()=>setCopied(false),1600)}catch{setCopied(false)}};
+  return <div className="chart-table-panel">
+    <DataTable rows={model.displayRows} columns={model.columns.map(({field,label})=>({field,label}))} rowKey="__rowKey" caption={`${title}表格`} searchable={model.displayRows.length>8} compactNumbers={false} toolbarControls={<button type="button" className="chart-table-copy-button" onClick={copy}>{copied?"已复制":"复制表格"}</button>}/>
+  </div>;
+}
+function EvidenceChart({spec,rows,wrapperClassName="",headerControls,renderPlot,...props}){
+  const [view,setView]=useState("chart");
   const alias=field=>rateAliases[field]??field;
   const displayField=field=>/(?:Rate|Share)$/.test(alias(field))?`${alias(field)} (%)`:alias(field);
   const rateFields=[spec?.y,...(spec?.fields??[])].filter(Boolean);
@@ -96,7 +112,8 @@ function EvidenceChart({spec,rows,wrapperClassName="",...props}){
     schedule();
     return()=>{observer.disconnect();resizeObserver.disconnect();cancelAnimationFrame(pending);clearTimeout(timer)};
   },[isRateChart,mappedRows]);
-  return <div ref={frameRef} className={`${isRateChart?"rate-chart-frame":"chart-frame"} ${wrapperClassName}`.trim()}><BaseEvidenceChart spec={mappedSpec} rows={mappedRows} {...props}/></div>;
+  const viewControl=<SegmentedControl ariaLabel={`${props.title??"图表"}展示方式`} size="compact" value={view} onChange={setView} options={[{value:"chart",label:"图表"},{value:"table",label:"表格"}]}/>;
+  return <div ref={frameRef} className={`${isRateChart?"rate-chart-frame":"chart-frame"} ${wrapperClassName}`.trim()}><BaseEvidenceChart spec={mappedSpec} rows={mappedRows} headerControls={<div className="chart-view-header-controls">{headerControls}{viewControl}</div>} renderPlot={(plot,chart)=>view==="table"?<ChartDataTable rows={mappedRows} spec={chart} title={props.title}/>:renderPlot?renderPlot(plot,chart):plot} {...props}/></div>;
 }
 function M({id,q,title,value,note,rows}){return <MetricCard variant="card" id={id} queryId={q} title={title} value={value} description={note} sourceRows={rows}/>}
 function RateBreakdownTooltip({active,label,payload=[],sourceRows=[],overall=false,order=[]}){
