@@ -80,12 +80,16 @@ export function chartTableModel(rows = [], spec = {}) {
   const measures = unique(spec.fields?.length ? spec.fields : [spec.y]);
   const supplements = relatedSupplementFields(measures, rows, series);
   const fields = unique([x, series, ...measures, ...supplements]);
+  const periodOrder = unique(rows.map(row => cleanText(row[x])));
+  const periodRank = new Map(periodOrder.map((period, index) => [period, index]));
+  const orderedRows = [...rows].sort((left, right) =>
+    (periodRank.get(cleanText(right[x])) ?? 0) - (periodRank.get(cleanText(left[x])) ?? 0));
   const columns = fields.map(field => ({
     field,
     label: fieldLabel(field, spec, measures),
     percent: isPercentField(field, spec, measures),
   }));
-  const displayRows = rows.map((row, index) => Object.fromEntries([
+  const displayRows = orderedRows.map((row, index) => Object.fromEntries([
     ["__rowKey", `${index}-${cleanText(row[x])}-${cleanText(series ? row[series] : "")}`],
     ...columns.map(column => {
       const value = row[column.field];

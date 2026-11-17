@@ -35,6 +35,18 @@ test("small percentage values stay in 0–100 chart units", () => {
   assert.equal(model.displayRows[0]["fpd0Rate (%)"], "0.50%");
 });
 
+test("table periods are newest first while series order stays stable", () => {
+  const model = chartTableModel([
+    { label: "10/30\u2060", segment: "Android", "segmentRate (%)": 51 },
+    { label: "10/30\u2060", segment: "iOS", "segmentRate (%)": 49 },
+    { label: "11/06\u2060", segment: "Android", "segmentRate (%)": 52 },
+    { label: "11/06\u2060", segment: "iOS", "segmentRate (%)": 50 },
+  ], { type: "line", x: "label", y: "segmentRate (%)", series: "segment", yLabel: "提现申请率" });
+  assert.deepEqual(model.displayRows.map(row => `${row.label}-${row.segment}`), [
+    "11/06-Android", "11/06-iOS", "10/30-Android", "10/30-iOS",
+  ]);
+});
+
 test("100 percent composition tables keep every visible series and copy as TSV", () => {
   const model = chartTableModel([
     { label: "2026/11\u2060", Facebook: 33.4, Organic: 66.6, total: 9478, __compositionDetails: {} },
