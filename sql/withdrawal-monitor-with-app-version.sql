@@ -1,5 +1,5 @@
 WITH params AS (
-    SELECT CAST(CURRENT_DATE - INTERVAL '60 day' AS TIMESTAMP) AS start_time,
+    SELECT CAST(DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '2 month' AS TIMESTAMP) AS start_time,
            CAST(CURRENT_DATE AS TIMESTAMP) AS end_time
 ), credit_history_ranked AS (
     SELECT ca.id,

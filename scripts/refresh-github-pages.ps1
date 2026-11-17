@@ -69,7 +69,7 @@ try {
     $newWithdrawalMax = Get-MaxDate $tempWithdrawal 'credit_pass_date'
     $newFpdMax = Get-MaxDate $tempFpd 'loan_date'
 
-    & $gitExe diff --quiet -- data/withdrawal.csv data/fpd.csv src/data.json src/content/dashboard/DashboardContent.jsx src/content/dashboard/dashboard.css dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1
+    & $gitExe diff --quiet -- data/withdrawal.csv data/fpd.csv src/data.json src/content/dashboard/DashboardContent.jsx src/content/dashboard/period-granularity.js src/content/dashboard/dashboard.css dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1 tests/period-granularity.test.mjs
     $hasUnpublishedChanges = ($LASTEXITCODE -ne 0)
 
     if (($oldWithdrawalMax -and $newWithdrawalMax -lt $oldWithdrawalMax) -or
@@ -101,7 +101,7 @@ try {
     & $gitExe restore --source=HEAD -- 'dist/.openai/hosting.json' 'dist/server/index.js'
     if ($LASTEXITCODE -ne 0) { throw '构建后文件恢复失败。' }
 
-    & $gitExe add .gitignore data/withdrawal.csv data/fpd.csv src/data.json src/content/dashboard/DashboardContent.jsx src/content/dashboard/dashboard.css dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1 sql/withdrawal-monitor-with-app-version.sql sql/fpd-monitor-with-app-version.sql
+    & $gitExe add .gitignore data/withdrawal.csv data/fpd.csv src/data.json src/content/dashboard/DashboardContent.jsx src/content/dashboard/period-granularity.js src/content/dashboard/dashboard.css dist/index.html scripts/build-dashboard-snapshot.mjs scripts/refresh-github-pages.ps1 sql/withdrawal-monitor-with-app-version.sql sql/fpd-monitor-with-app-version.sql tests/period-granularity.test.mjs
     & $gitExe diff --cached --quiet
     if ($LASTEXITCODE -eq 0) {
         Write-Log '文件无变化，无需发布。'
