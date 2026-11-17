@@ -156,7 +156,9 @@ function creditPassCompositionWide(rows,grain,dim,order=[]){return groups(rows,g
   return{label:cd(d),total,__compositionDetails:details,...Object.fromEntries(ordered.map(value=>[value,total?((details[value].count/total)*100):0]))};
 }).filter(row=>Object.keys(row.__compositionDetails).length>0)}
 const dimensionLabels={platform:"平台",media:"媒体",original_product:"原始产品",product:"产品",app_version:"App版本",risk_level:"RG",credit_limit_bucket:"授信额度桶",credit_type:"授信类型"};
-const attributionDimensions=["platform","media","original_product","product","risk_level","credit_limit_bucket","app_version"];
+// New customers naturally concentrate on the latest app version, so version mix is
+// observational context rather than an actionable explanation of daily T0 movement.
+const attributionDimensions=["platform","media","original_product","product","risk_level","credit_limit_bucket"];
 const cleanDimensionValue=value=>String(value??"空值").replace(/^\d+_/i,"");
 function analyzeT0Dimension(previousRows,latestRows,dimension,previousTotal,latestTotal){
   const values=[...new Set([...previousRows,...latestRows].map(row=>row[dimension]).filter(value=>value!=null&&String(value).trim()!==""))];
