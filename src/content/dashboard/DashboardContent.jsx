@@ -30,7 +30,8 @@ function fs(a){const names=["loan_order_cnt","loan_customer_cnt","loan_amt_sum",
 const periods=(r,g,s)=>groups(r,g).map(([p,a])=>({period:p,label:cd(p),...s(a)}));
 const rateAliases={t0:"t0Rate",t7:"t7Rate",util:"utilizationRate",rate:"segmentRate",fa0:"fpd0AmountRate",fa3:"fpd3AmountRate",share:"segmentShare"};
 const dateScopedFilterIds=["original_product","risk_level","app_version"];
-const sortedFilterIds=[...dateScopedFilterIds,"is_t0_registration"];
+const unscopedFilterIds=["is_t0_registration","credit_type"];
+const sortedFilterIds=[...dateScopedFilterIds,...unscopedFilterIds];
 function Filters(props){
   const {queries,values,filters}=props;
   const fpd=filters.some(filter=>filter.id==="loan_type");
@@ -40,7 +41,7 @@ function Filters(props){
     const source=queries[fpd?"loan_fpd_monitor":"withdrawal_monitor"]?.rows??[];
     const options=Object.fromEntries(sortedFilterIds.map(field=>[field,new Set()]));
     for(const row of source){
-      if(row.is_t0_registration)options.is_t0_registration.add(row.is_t0_registration);
+      for(const field of unscopedFilterIds)if(row[field])options[field].add(row[field]);
       const date=fpd?row.loan_date:row.credit_pass_date;
       const inRange=start==="all"||!range||(end?date>=start&&date<=end:date<=start);
       if(inRange&&Number(fpd?row.loan_order_cnt:row.credit_pass_customer_cnt)>0){
