@@ -65,6 +65,7 @@ main.page[data-data-app-content="dashboard"] {
 .chart-table-panel .table{min-width:100%}
 .chart-table-panel .table th,.chart-table-panel .table td{white-space:nowrap}
 .chart-table-panel .table td{user-select:text}
+.chart-table-unit{font-size:.75rem;color:var(--muted);white-space:nowrap}
 .chart-table-panel--pivot .table{min-width:max(100%,var(--pivot-min-width));table-layout:fixed}
 .chart-table-panel--pivot .table :is(th,td):first-child{position:sticky;z-index:2;left:0;width:96px;min-width:96px;max-width:96px;padding-inline:10px;background:var(--surface);box-shadow:1px 0 0 color-mix(in srgb,var(--border) 85%,transparent)}
 .chart-table-panel--pivot .table th:first-child{z-index:3}

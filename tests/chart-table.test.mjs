@@ -69,4 +69,31 @@ test("100 percent composition tables keep every visible series and copy as TSV",
   ], { type: "stackedBar100", x: "label", y: "Facebook", fields: ["Facebook", "Organic"], yLabel: "授信通过人数占比" });
   assert.deepEqual(model.columns.map(column => column.label), ["统计周期", "Facebook", "Organic", "合计"]);
   assert.match(chartTableTsv(model), /^统计周期\tFacebook\tOrganic\t合计\n2026\/11\t33\.40%\t66\.60%\t9478$/u);
+  assert.deepEqual(model.columns.filter(column => column.highlight).map(column => column.field), ["Facebook", "Organic"]);
+  assert.deepEqual(model.displayRows[0].__rawValues, { Facebook: 33.4, Organic: 66.6 });
+});
+
+test("amount tables display 万 IDR with two decimals while preserving numeric heatmap inputs", () => {
+  const model = chartTableModel([
+    { label: "11/20", segment: "CL_01", value: 4583908.045977011 },
+    { label: "11/20", segment: "CL_03", value: null },
+    { label: "11/20", segment: "CL_06", value: 8720000 },
+  ], { x: "label", y: "value", series: "segment" }, { inTenThousands: true });
+  const [row] = model.displayRows;
+  assert.deepEqual([row.__series_0, row.__series_1, row.__series_2], ["458.39", "--", "872.00"]);
+  assert.equal(row.__rawValues.__series_1, null);
+  assert.equal(model.valueMin, 4583908.045977011);
+  assert.match(chartTableTsv(model), /458\.39\t--\t872\.00$/u);
+  const overall = chartTableModel([
+    { label: "11/20", avgT0LoanAmount: 4088888.888888889, t0LoanCustomers: 9 },
+  ], { x: "label", y: "avgT0LoanAmount", yLabel: "人均放款金额（Rp）" }, { inTenThousands: true });
+  assert.equal(overall.displayRows[0].avgT0LoanAmount, "408.89");
+  assert.equal(overall.displayRows[0].t0LoanCustomers, 9);
+  const fpd = chartTableModel([
+    { label: "11/09", "fpd0AmountRate (%)": 15.32, fpd0_amt_numerator: 89771000, fpd0_amt_denominator: 586058000 },
+  ], { x: "label", y: "fpd0AmountRate (%)", yLabel: "FPD0金额逾期率" });
+  assert.equal(fpd.hasAmountValues, true);
+  assert.equal(fpd.displayRows[0]["fpd0AmountRate (%)"], "15.32%");
+  assert.equal(fpd.displayRows[0].fpd0_amt_numerator, "8977.10");
+  assert.equal(fpd.displayRows[0].fpd0_amt_denominator, "58605.80");
 });

@@ -32,6 +32,15 @@ const FIELD_LABELS = {
 
 const unique = values => [...new Set(values.filter(Boolean))];
 const cleanText = value => String(value ?? "").replace(/\u2060/g, "");
+const idrFields = new Set([
+  "avgCreditLimit", "avgT0CreditLimit", "avgT0LoanAmount",
+  "credit_pass_limit_amt_sum", "un", "ud", "t0LoanAmt",
+  "loan_amt_sum", "credit_limit_sum", "fpd0_amt_numerator", "fpd0_amt_denominator",
+  "fpd10_amt_numerator", "fpd10_amt_denominator",
+]);
+
+export const toTenThousandIdr = value => rawMetricValue(value) == null ? null : Number(value) / 10000;
+export const formatTenThousandIdr = value => toTenThousandIdr(value)?.toFixed(2) ?? "--";
 
 function relatedSupplementFields(measures, rows, series) {
   const available = new Set(rows.flatMap(row => Object.keys(row)));
@@ -74,11 +83,11 @@ function percentValue(value) {
   return number;
 }
 
-function formatMetricValue(value, percent = false) {
+function formatMetricValue(value, percent = false, inTenThousands = false) {
   if (value == null || value === "") return "--";
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return cleanText(value);
-  if (!percent) return numeric;
+  if (!percent) return inTenThousands ? formatTenThousandIdr(numeric) : numeric;
   const percentage = percentValue(numeric);
   return percentage == null ? "--" : `${percentage.toFixed(2)}%`;
 }
@@ -92,7 +101,13 @@ function orderedSeriesValues(rows, series, tooltipOrder = []) {
     || (firstSeen.get(left) ?? 0) - (firstSeen.get(right) ?? 0));
 }
 
-function pivotChartTableModel(rows, spec, x, series, measure) {
+function rawMetricValue(value) {
+  if (value == null || value === "") return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function pivotChartTableModel(rows, spec, x, series, measure, inTenThousands) {
   const seriesValues = orderedSeriesValues(rows, series, spec.tooltipOrder ?? []);
   const periodValues = unique(rows.map(row => cleanText(row[x]))).reverse();
   const percent = isPercentField(measure, spec, [measure]);
@@ -104,8 +119,7 @@ function pivotChartTableModel(rows, spec, x, series, measure) {
     const period = cleanText(row[x]);
     const category = cleanText(row[series]);
     if (!valuesByPeriod.has(period) || !categoryFields.has(category)) continue;
-    const numeric = Number(row[measure]);
-    const raw = Number.isFinite(numeric) ? numeric : null;
+    const raw = rawMetricValue(row[measure]);
     valuesByPeriod.get(period).set(category, row[measure]);
     if (raw != null) heatValues.push(raw);
   }
@@ -125,9 +139,8 @@ function pivotChartTableModel(rows, spec, x, series, measure) {
     const entries = seriesValues.map(category => {
       const field = categoryFields.get(category);
       const raw = periodValuesMap.get(category);
-      const numeric = Number(raw);
-      rawValues[field] = Number.isFinite(numeric) ? numeric : null;
-      return [field, formatMetricValue(raw, percent)];
+      rawValues[field] = rawMetricValue(raw);
+      return [field, formatMetricValue(raw, percent, inTenThousands)];
     });
     return Object.fromEntries([
       ["__rowKey", period],
@@ -146,31 +159,42 @@ function pivotChartTableModel(rows, spec, x, series, measure) {
   };
 }
 
-export function chartTableModel(rows = [], spec = {}) {
+export function chartTableModel(rows = [], spec = {}, { inTenThousands = false } = {}) {
   const x = spec.x ?? "label";
   const series = spec.series;
   const measures = unique(spec.fields?.length ? spec.fields : [spec.y]);
-  if (series && measures.length) return pivotChartTableModel(rows, spec, x, series, measures[0]);
+  if (series && measures.length) {
+    const amount = inTenThousands || idrFields.has(measures[0]);
+    return { ...pivotChartTableModel(rows, spec, x, series, measures[0], amount), hasAmountValues: amount };
+  }
+  const isComposition = spec.type === "stackedBar100" && rows.some(row => row.__compositionDetails);
   const supplements = relatedSupplementFields(measures, rows, series);
   const fields = unique([x, series, ...measures, ...supplements]);
   const periodOrder = unique(rows.map(row => cleanText(row[x])));
   const periodRank = new Map(periodOrder.map((period, index) => [period, index]));
   const orderedRows = [...rows].sort((left, right) =>
     (periodRank.get(cleanText(right[x])) ?? 0) - (periodRank.get(cleanText(left[x])) ?? 0));
-  const columns = fields.map(field => ({
-    field,
-    label: fieldLabel(field, spec, measures),
-    percent: isPercentField(field, spec, measures),
-  }));
+  const columns = fields.map(field => {
+    const amount = idrFields.has(field) || inTenThousands && measures.includes(field);
+    const label = fieldLabel(field, spec, measures);
+    return {
+      field,
+      label: amount ? label.replace(/（(?:Rp|万 IDR)）$/u, "") + "（万 IDR）" : label,
+      amount,
+      percent: isPercentField(field, spec, measures),
+      highlight: isComposition && measures.includes(field),
+    };
+  });
   const displayRows = orderedRows.map((row, index) => Object.fromEntries([
     ["__rowKey", `${index}-${cleanText(row[x])}-${cleanText(series ? row[series] : "")}`],
+    ...(isComposition ? [["__rawValues", Object.fromEntries(measures.map(field => [field, rawMetricValue(row[field])]))]] : []),
     ...columns.map(column => {
       const value = row[column.field];
       if (column.field === x || column.field === series) return [column.field, cleanText(value) || "--"];
-      return [column.field, formatMetricValue(value, column.percent)];
+      return [column.field, formatMetricValue(value, column.percent, column.amount)];
     }),
   ]));
-  return { columns, displayRows };
+  return { columns, displayRows, hasAmountValues: columns.some(column => column.amount) };
 }
 
 function tsvValue(value) {
