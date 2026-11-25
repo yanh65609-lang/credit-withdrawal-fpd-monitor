@@ -29,6 +29,8 @@ function ws(a){const hasCreditLimit=a.some(r=>Object.hasOwn(r,"credit_pass_limit
 function fs(a){const names=["loan_order_cnt","loan_customer_cnt","loan_amt_sum","credit_limit_sum","fpd0_numerator","fpd0_denominator","fpd0_amt_numerator","fpd0_amt_denominator","fpd10_numerator","fpd10_denominator","fpd10_amt_numerator","fpd10_amt_denominator"],x=Object.fromEntries(names.map(f=>[f,sum(a,f)]));return{...x,fpd0Rate:ratio(x.fpd0_numerator,x.fpd0_denominator),fpd10Rate:ratio(x.fpd10_numerator,x.fpd10_denominator),fpd0AmountRate:ratio(x.fpd0_amt_numerator,x.fpd0_amt_denominator),fpd10AmountRate:ratio(x.fpd10_amt_numerator,x.fpd10_amt_denominator),util:ratio(x.loan_amt_sum,x.credit_limit_sum)}}
 const periods=(r,g,s)=>groups(r,g).map(([p,a])=>({period:p,label:cd(p),...s(a)}));
 const rateAliases={t0:"t0Rate",t7:"t7Rate",util:"utilizationRate",rate:"segmentRate",fa0:"fpd0AmountRate",fa3:"fpd3AmountRate",share:"segmentShare"};
+const dateScopedFilterIds=["original_product","risk_level","app_version"];
+const sortedFilterIds=[...dateScopedFilterIds,"is_t0_registration"];
 function Filters(props){
   const {queries,values,filters}=props;
   const fpd=filters.some(filter=>filter.id==="loan_type");
@@ -36,19 +38,20 @@ function Filters(props){
   const productQueries=useMemo(()=>{
     const [start,end]=String(range??"all").split("..");
     const source=queries[fpd?"loan_fpd_monitor":"withdrawal_monitor"]?.rows??[];
-    const options=Object.fromEntries(["original_product","risk_level","app_version"].map(field=>[field,new Set()]));
+    const options=Object.fromEntries(sortedFilterIds.map(field=>[field,new Set()]));
     for(const row of source){
+      if(row.is_t0_registration)options.is_t0_registration.add(row.is_t0_registration);
       const date=fpd?row.loan_date:row.credit_pass_date;
       const inRange=start==="all"||!range||(end?date>=start&&date<=end:date<=start);
       if(inRange&&Number(fpd?row.loan_order_cnt:row.credit_pass_customer_cnt)>0){
-        for(const field of Object.keys(options))if(row[field])options[field].add(row[field]);
+        for(const field of dateScopedFilterIds)if(row[field])options[field].add(row[field]);
       }
     }
     return {...queries,...Object.fromEntries(Object.entries(options).map(([field,entries])=>[
       `date_options_${field}`,{rows:[...entries].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).map(value=>({[field]:value}))}
     ]))};
   },[queries,range,fpd]);
-  const scopedFilters=useMemo(()=>filters.map(filter=>["original_product","risk_level","app_version"].includes(filter.id)?{...filter,queryIds:[`date_options_${filter.id}`]}:filter),[filters]);
+  const scopedFilters=useMemo(()=>filters.map(filter=>sortedFilterIds.includes(filter.id)?{...filter,queryIds:[`date_options_${filter.id}`]}:filter),[filters]);
   return <BaseFilters {...props} queries={productQueries} filters={scopedFilters}/>;
 }
 function useResetFiltersOnEntry(snapshot,setFilter){
