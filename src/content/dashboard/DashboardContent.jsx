@@ -15,7 +15,7 @@ const namedColors={
   FPD0:"#00a0bf",FPD10:"#d78700","fpd0Rate (%)":"#00a0bf","fpd10Rate (%)":"#d78700","fpd0AmountRate (%)":"#00a0bf","fpd10AmountRate (%)":"#d78700",
   Android:"#1296db",iOS:"#e35d8f",未知:"#9aa3ad",UNKNOWN:"#9aa3ad",
   ASA:"#f2afa3",Facebook:"#1296db",Google:"#e87500",Organic:"#61c998",Tiktok:"#979500",其他:"#9ecbe5",空值:"#e6c8dc",
-  RG0:"#7185ff",RG1:"#ef6955",RG2:"#00a88f",RG3:"#e45d87",RG4:"#00a0bf",RG5:"#677500",RG6:"#d7a441",RG7:"#7b8da8",
+  RG0:"#7185ff",RG1:"#a34d00",RG2:"#00a88f",RG3:"#e45d87",RG4:"#00a0bf",RG5:"#677500",RG6:"#d7a441",RG7:"#7b8da8",
   CL_01:"#1296db",CL_03:"#e87500",CL_04:"#61c998",CL_05:"#e35d8f",CL_06:"#8b7cf6",CL_07:"#979500",CL_08:"#6ea6c8",
   等本:"#1296db",小等本:"#e87500",灵活产品:"#61c998",营销产品:"#e35d8f",其他产品:"#9aa3ad",
   首借:"#1296db",复借:"#e87500",
