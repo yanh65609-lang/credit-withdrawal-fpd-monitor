@@ -4,6 +4,7 @@ import "./dashboard.css";
 import {chartTableModel,chartTableTsv,formatTenThousandIdr,toTenThousandIdr} from "./chart-table.js";
 import {fixedDimensionOrder} from "./dimension-order.js";
 import {displayPeriod,isCompleteCalendarMonth,periodKey} from "./period-granularity.js";
+import {alignTrendLabels} from "./trend-labels.js";
 const tabs=[{id:"withdrawal",label:"01_T0/T7提现率"},{id:"fpd",label:"02_提现订单及FPD"}],baseFilterIds=["credit_pass_date","original_product","product","app_version","credit_type","risk_level","platform","media"];
 const entryResetFilterIds=[...baseFilterIds,"is_t0_registration","loan_type"];
 const riskOrder=["RG0","RG1","RG2","RG3","RG4","RG5","RG6","RG7"],creditLimitOrder=["200万及以上","180万","150万","120万","100万","80万","60万","50万","40万","30万"];
@@ -117,6 +118,7 @@ function EvidenceChart({spec,rows,wrapperClassName="",headerControls,renderPlot,
       formatValue={value=>value==null?"—":`${Number(value).toFixed(2)} 万 IDR`}/>,
   }:chartOptions;
   const frameRef=useRef(null);
+  const alignSegmentLabels=props.id==="withdraw"&&Boolean(spec.series);
   useEffect(()=>{
     if(!isRateChart||!frameRef.current)return;
     const fix=()=>{
@@ -135,6 +137,7 @@ function EvidenceChart({spec,rows,wrapperClassName="",headerControls,renderPlot,
           label.style.transform="none";
         }));
       }
+      if(alignSegmentLabels)alignTrendLabels(frameRef.current);
     };
     fix();
     let pending=0,timer=0;
@@ -144,7 +147,7 @@ function EvidenceChart({spec,rows,wrapperClassName="",headerControls,renderPlot,
     const resizeObserver=new ResizeObserver(schedule);resizeObserver.observe(frameRef.current);
     schedule();
     return()=>{observer.disconnect();resizeObserver.disconnect();cancelAnimationFrame(pending);clearTimeout(timer)};
-  },[isRateChart,mappedRows]);
+  },[isRateChart,mappedRows,alignSegmentLabels]);
   const viewControl=<SegmentedControl ariaLabel={`${props.title??"图表"}展示方式`} size="compact" value={view} onChange={setView} options={[{value:"chart",label:"图表"},{value:"table",label:"表格"}]}/>;
   return <div ref={frameRef} className={`${isRateChart?"rate-chart-frame":"chart-frame"} ${wrapperClassName}`.trim()}><BaseEvidenceChart spec={mappedSpec} rows={plotRows} chartOptions={plotOptions} headerControls={<div className="chart-view-header-controls">{headerControls}{viewControl}</div>} renderPlot={(plot,chart)=>view==="table"?<ChartDataTable rows={mappedRows} spec={chart} title={props.title} inTenThousands={amountInTenThousands}/>:renderPlot?renderPlot(plot,chart):plot} {...props}/></div>;
 }
